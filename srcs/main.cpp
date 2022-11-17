@@ -13,8 +13,9 @@ int main(int ac, char **av)
 	int serv_socket = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in serv_addr;
 	serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serv_addr.sin_port = htons(4242);
+    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	std::memset(&serv_addr.sin_zero, 0, sizeof(serv_addr.sin_zero));
 
 	if (bind(serv_socket, (const struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
 		exit_error("bind function failed");
