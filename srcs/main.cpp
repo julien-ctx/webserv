@@ -1,5 +1,7 @@
-int main(int ac, char **av)
+#include "serveur.cpp"
+#include "socket.cpp"
+
+int main()
 {
-	(void)ac;
-	(void)av;
+    ft::Serveur ts(AF_INET, SOCK_STREAM, 0, 80, INADDR_ANY, 10, 2);
 }
