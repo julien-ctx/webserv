@@ -1,11 +1,11 @@
 #pragma once
 
-#include "SimpleSocket.hpp"
+#include "ConnectingSocket.hpp"
 
 namespace ft
 {
 
-class BindingSocket : public SimpleSocket
+class BindingSocket : public ConnectingSocket
 {
 
 public:
