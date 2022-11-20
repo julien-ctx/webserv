@@ -13,7 +13,9 @@
 #include "client.hpp"
 #include "response.hpp"
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 30000
+#define CSS 42
+#define HTML 43
 
 void	exit_error(std::string str)
 {
@@ -56,6 +58,7 @@ public:
 
     void listener(Client &client)
     {
+        std::cout << "localhost:" + std::to_string(this->_port) << std::endl;
         if (listen(this->_fd, 5) < 0) // Change number 5 later
 		    exit_error("listen function failed");
         socklen_t size = client.getSize();
@@ -67,6 +70,9 @@ public:
 
     void responder(Client &client, Response &resp)
     {
-        send(client.getFd(), resp.getResp().c_str(), resp.getSize(), 0);
+        resp.setData("./www/index.html", HTML);
+        send(client.getFd(), resp.getHTML().c_str(), resp.getHTMLSize(), 0);
+        resp.setData("./www/style/style.css", CSS);
+        send(client.getFd(), resp.getCSS().c_str(), resp.getHTMLSize(), 0);
     }
 };

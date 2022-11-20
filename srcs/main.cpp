@@ -12,10 +12,8 @@ int main(int ac, char **av)
 	Response resp;
 
 	serv.binder();
-	while (1)
-	{
-		serv.listener(client);
-		serv.responder(client, resp);
-	}
+	serv.listener(client);
+	serv.responder(client, resp);
+	sleep(2);
 	std::cout << "Received" << std::endl;
 }
