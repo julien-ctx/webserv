@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 #include "server.hpp"
+#include "client.hpp"
 
 #define CSS 42
 #define HTML 43
@@ -11,8 +12,7 @@ void	exit_error(std::string str);
 class Response
 {
 private:
-	std::string _html;
-	std::string _css;
+	std::string _content;
 
 public:
 	/* ----- Constructors ----- */
@@ -21,10 +21,8 @@ public:
 	~Response() {}
     /* ------------------------ */
 
-	std::string getHTML() const {return this->_html;}
-	size_t getHTMLSize() const {return this->_html.size();}
-	std::string getCSS() const {return this->_css;}
-	size_t getCSSSize() const {return this->_css.size();}
+	std::string getData() const {return this->_content;}
+	size_t getDataSize() const {return this->_content.size();}
 
 	int fileSize(std::string const path)
 	{
@@ -36,28 +34,34 @@ public:
 		return size;
 	}
 
-	void setData(std::string const path, int type)
-	{
-		if (type == HTML)
-		{
-			this->_html = "HTTP/1.1 200 OK\n";
-			this->_html += "Content-Type: text/html\n\n";
-		}
-		else
-		{
-			this->_css = "HTTP/1.1 200 OK\n";
-			this->_css = "Content-Type: text/css\n\n\n";
-		}
+	std::string getIndex(std::string const path)
+    {
+		this->_content += "HTTP/1.1 200 OK\n";
+		this->_content += "Content-Type: text/html\n\n";
 		std::ifstream file;
 		file.open(path);
 		if (!file)
 			exit_error("opening index failed");
 		std::stringstream buffer;
 		buffer << file.rdbuf();
-		if (type == CSS)
-			this->_css += buffer.str();
-		else
-			this->_html += buffer.str() + "\n\n";
+		this->_content += buffer.str();
 		file.close();
-	}
+		return this->_content;
+    }
+
+	std::string getCSS(std::string const path)
+    {
+		this->_content = "";
+		this->_content += "HTTP/1.1 200 OK\n";
+		this->_content += "Content-Type: text/css\n\n";
+		std::ifstream file;
+		file.open(path);
+		if (!file)
+			exit_error("opening index failed");
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		this->_content += buffer.str();
+		file.close();
+		return this->_content;
+    }
 };

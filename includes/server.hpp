@@ -14,6 +14,7 @@ private:
     int _fd;
     struct sockaddr_in _addr;
     int _port;
+    char _buf[BUFFER_SIZE];
 
 public:
 	/* ----- Constructors ----- */
@@ -58,11 +59,15 @@ public:
             exit_error("accept function failed");
     }
 
+
+
     void responder(Client &client, Response &resp)
     {
-        resp.setData("./www/index.html", HTML);
-        resp.setData("./www/style.css", CSS);
-        std::cout << (resp.getHTML() + resp.getCSS()).c_str() << std::endl;
-        send(client.getFd(), (resp.getHTML() + resp.getCSS()).c_str(), resp.getHTMLSize(), 0);
+
+        send(client.getFd(), resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
+        recv(client.getFd(), this->_buf, BUFFER_SIZE, 0);
+        std::cout << this->_buf << std::endl;
+        send(client.getFd(), resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
+        // std::cout << resp.getCSS("./www/style.css").c_str() << std::endl;
     }
 };
