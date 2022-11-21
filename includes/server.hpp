@@ -50,7 +50,10 @@ public:
     void binder()
     {
         if (bind(this->_fd, (const struct sockaddr *)&this->_addr, sizeof(this->_addr)) < 0)
+        {
+            close(this->_fd);
             exit_error("bind function failed");
+        }
         int yes = 1;
         if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
             exit_error("setsockopt function failed");
@@ -61,9 +64,12 @@ public:
         std::cout << "localhost:" + std::to_string(this->_port) << std::endl;
         if (listen(this->_fd, 5) < 0) // Change number 5 later
 		    exit_error("listen function failed");
+      
+    }
+    void accepter(Client &client)
+    {
         socklen_t size = client.getSize();
         client.setFd(accept(this->_fd, (struct sockaddr *)&this->_addr, &size));
-        if (client.getFd() < 0)
         if (client.getFd() < 0)
             exit_error("accept function failed");
     }
