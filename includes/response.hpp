@@ -48,14 +48,16 @@ public:
 
 	void setData(std::string const path, int type)
 	{
-		if (type == CSS)
-			this->_css = "HTTP/1.1 200 OK\n";
-		else
+		if (type == HTML)
+		{
 			this->_html = "HTTP/1.1 200 OK\n";
-		if (type == CSS)
-			this->_css += "Content-Type: text/css\n\n";
-		else
 			this->_html += "Content-Type: text/html\n\n";
+		}
+		else
+		{
+			this->_css = "HTTP/1.1 200 OK\n";
+			this->_css = "Content-Type: text/css\n\n\n";
+		}
 		std::ifstream file;
 		file.open(path);
 		if (!file)
@@ -65,8 +67,7 @@ public:
 		if (type == CSS)
 			this->_css += buffer.str();
 		else
-			this->_html += buffer.str();
+			this->_html += buffer.str() + "\n\n";
 		file.close();
-
 	}
 };

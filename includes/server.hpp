@@ -71,8 +71,8 @@ public:
     void responder(Client &client, Response &resp)
     {
         resp.setData("./www/index.html", HTML);
-        send(client.getFd(), resp.getHTML().c_str(), resp.getHTMLSize(), 0);
-        resp.setData("./www/style/style.css", CSS);
-        send(client.getFd(), resp.getCSS().c_str(), resp.getHTMLSize(), 0);
+        resp.setData("./www/style.css", CSS);
+        std::cout << (resp.getHTML() + resp.getCSS()).c_str() << std::endl;
+        send(client.getFd(), (resp.getHTML() + resp.getCSS()).c_str(), resp.getHTMLSize(), 0);
     }
 };
