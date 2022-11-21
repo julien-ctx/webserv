@@ -13,7 +13,7 @@ SRCS = $(addprefix srcs/, main.cpp) \
 
 OBJS = $(SRCS:.cpp=.o)
 
-CPPFLAGS = -Wall -Wextra -Werror -std=c++98
+CPPFLAGS = 
 
 all: $(NAME)
 
