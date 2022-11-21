@@ -1,15 +1,6 @@
 #pragma once
 
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <sys/event.h>
-#include <unistd.h>
-#include <iostream>
-#include <string>
-
+#include "utils.hpp"
 #include "client.hpp"
 #include "response.hpp"
 
@@ -17,16 +8,9 @@
 #define CSS 42
 #define HTML 43
 
-void	exit_error(std::string str)
-{
-	std::cout << "Error: " + str << std::endl;
-	exit(1);
-}
-
 class Server
 {
 private:
-    char _buffer[BUFFER_SIZE];
     int _fd;
     struct sockaddr_in _addr;
     int _port;
@@ -59,7 +43,7 @@ public:
             exit_error("setsockopt function failed");
     }
 
-    void listener(Client &client)
+    void listener()
     {
         std::cout << "localhost:" + std::to_string(this->_port) << std::endl;
         if (listen(this->_fd, 5) < 0) // Change number 5 later

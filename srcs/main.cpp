@@ -12,7 +12,7 @@ int main(int ac, char **av)
 	Response resp;
 
 	serv.binder();
-	serv.listener(client);
+	serv.listener();
 	serv.accepter(client);
 	serv.responder(client, resp);
 	std::cout << "Received" << std::endl;
