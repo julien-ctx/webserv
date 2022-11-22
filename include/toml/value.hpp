@@ -27,6 +27,9 @@ namespace   TOML
 		//variable
 		TOML::types		_typing;
 		type_string		_key;
+		type_table		*_parent;
+		bool			_is_array_table;
+
 
 		type_int		_int;
 		type_float		_float;
@@ -56,7 +59,8 @@ namespace   TOML
 		// construct from a date_time
 		value(type_string key, type_date_time dt) : _typing(T_date_time), _key(key), _date_time(dt) {}
 		// construct from a table
-		value(type_string key) : _typing(T_table), _key(key) {}
+		value(type_string key, bool is_array) : _typing(T_table), _key(key), _is_array_table(is_array), _array() {}
+
 		~value() {}
 
     }
