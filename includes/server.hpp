@@ -59,15 +59,27 @@ public:
             exit_error("accept function failed");
     }
 
-
-
     void responder(Client &client, Response &resp)
     {
+        (void)client;
+        (void)resp;
+        (void)this->_buf;
 
-        send(client.getFd(), resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
-        recv(client.getFd(), this->_buf, BUFFER_SIZE, 0);
-        std::cout << this->_buf << std::endl;
-        send(client.getFd(), resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
-        // std::cout << resp.getCSS("./www/style.css").c_str() << std::endl;
+        int kq = kqueue();
+        if (kq < 0)
+            exit_error("kqueue function failed");
+        struct kevent kev;
+        EV_SET(&kev, this->_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+        if (kevent(kq, &kev, 1, NULL, 0, NULL) < 0)
+            exit_error("kevent function failed");
+        int nev = 0;
+        while (1)
+        {
+            std::cout << "Lol" << std::endl;
+            nev = kevent(kq, &kev, 1, NULL, 1024, NULL);
+            send(client.getFd(), resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
+            recv(client.getFd(), this->_buf, BUFFER_SIZE, 0);
+            std::cout << this->_buf << std::endl;
+        }
     }
 };

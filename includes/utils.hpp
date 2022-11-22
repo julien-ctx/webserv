@@ -11,5 +11,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <netdb.h>
 
 void exit_error (std::string str);
