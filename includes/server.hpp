@@ -7,6 +7,36 @@
 #define BUFFER_SIZE 30000
 #define CSS 42
 #define HTML 43
+#define NUM_CLIENTS 1024
+#define MAX_EVENTS 32
+#define MAX_MSG_SIZE 1024
+
+struct client_data {
+    int fd;
+} clients[NUM_CLIENTS];
+
+int get_conn(int fd) {
+    for (int i = 0; i < NUM_CLIENTS; i++)
+        if (clients[i].fd == fd)
+            return i;
+    return -1;
+}
+
+int conn_add(int fd) {
+    if (fd < 1) return -1;
+    int i = get_conn(0);
+    if (i == -1) return -1;
+    clients[i].fd = fd;
+    return 0;
+}
+
+int conn_del(int fd) {
+    if (fd < 1) return -1;
+    int i = get_conn(fd);
+    if (i == -1) return -1;
+    clients[i].fd = 0;
+    return close(fd);
+}
 
 class Server
 {
@@ -62,24 +92,48 @@ public:
     void responder(Client &client, Response &resp)
     {
         (void)client;
-        (void)resp;
-        (void)this->_buf;
-
         int kq = kqueue();
-        if (kq < 0)
-            exit_error("kqueue function failed");
-        struct kevent kev;
-        EV_SET(&kev, this->_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-        if (kevent(kq, &kev, 1, NULL, 0, NULL) < 0)
-            exit_error("kevent function failed");
-        int nev = 0;
-        while (1)
-        {
-            std::cout << "Lol" << std::endl;
-            nev = kevent(kq, &kev, 1, NULL, 1024, NULL);
-            send(client.getFd(), resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
-            recv(client.getFd(), this->_buf, BUFFER_SIZE, 0);
-            std::cout << this->_buf << std::endl;
+        struct kevent evSet1;
+        EV_SET(&evSet1, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        kevent(kq, &evSet1, 1, NULL, 0, NULL);
+
+    struct kevent evSet;
+    struct kevent evList[MAX_EVENTS];
+    struct sockaddr_storage addr;
+    socklen_t socklen = sizeof(addr);
+    while (1) {
+        int num_events = kevent(kq, NULL, 0, evList, MAX_EVENTS, NULL);
+        for (int i = 0; i < num_events; i++) {
+            // receive new connection
+            if (evList[i].ident == (unsigned long)this->_fd) {
+                int fd = accept(evList[i].ident, (struct sockaddr *) &addr, &socklen);
+                if (conn_add(fd) == 0) {
+                    EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+                    kevent(kq, &evSet, 1, NULL, 0, NULL);
+                    if (i == 0) {
+                        send(fd, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
+                        std::cout << "html sent" << std::endl;
+                    }
+                        std::cout << "css sent" << std::endl;
+                        send(fd, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
+                        usleep(200);
+                } else {
+                    printf("connection refused.\n");
+                    close(fd);
+                }
+            } // client disconnected
+            else if (evList[i].flags & EV_EOF) {
+                int fd = evList[i].ident;
+                printf("client #%d disconnected.\n", get_conn(fd));
+                EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+                kevent(kq, &evSet, 1, NULL, 0, NULL);
+                conn_del(fd);
+            } // read message from client
+            else if (evList[i].filter == EVFILT_READ) {
+                recv(evList[i].ident, this->_buf, BUFFER_SIZE, 0);
+                std::cout << this->_buf << std::endl;
+            }
         }
+    }
     }
 };
