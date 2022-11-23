@@ -52,13 +52,24 @@ namespace TOML
 		// insertion of table
 		void	insert_table(type_string key);
 		//parse
-		bool is_hexa(type_string str);
-		bool is_whitespace(char c);
+		bool	is_hexa(char c);
+		bool	is_lower(char c);
+		bool	is_upper(char c);
+		bool	is_whitespace(char c);
+		bool	valid_antislash(char c);
+		bool	str_is_string(type_string str);
+		bool	str_is_nbr(type_string str);
+		bool	str_is_int(type_string str);
+		bool	str_is_float(type_string str);
+		bool	str_is_bool(type_string str);
+		bool	str_is_date(type_string str);
+		bool	str_is_array(type_string str);
 		//utiles 
-		type_string check_empty_string(type_string str, int len);
-		type_string double_quote_change_string(type_string str);
-		bool parse::unicode_interpreter(size_t pos, type_string &str);
-        void wspace_trimmer(size_t pos, type_string str);
+		type_string	check_empty_string(type_string str, int len);
+		type_string	double_quote_change_string(type_string str);
+		bool 		parse::unicode_interpreter(size_t pos, type_string &str);
+        void 		wspace_trimmer(size_t pos, type_string &str);
+		float		atof(type_string str);
 
 
     }
