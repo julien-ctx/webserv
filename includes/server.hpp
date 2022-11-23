@@ -101,7 +101,9 @@ public:
     struct kevent evList[MAX_EVENTS];
     struct sockaddr_storage addr;
     socklen_t socklen = sizeof(addr);
+    int j = 0;
     while (1) {
+        j++;
         int num_events = kevent(kq, NULL, 0, evList, MAX_EVENTS, NULL);
         for (int i = 0; i < num_events; i++) {
             // receive new connection
@@ -110,13 +112,15 @@ public:
                 if (conn_add(fd) == 0) {
                     EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
                     kevent(kq, &evSet, 1, NULL, 0, NULL);
-                    if (i == 0) {
+                    if (j == 1) {
                         send(fd, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
                         std::cout << "html sent" << std::endl;
                     }
+                    else
+                    {
                         std::cout << "css sent" << std::endl;
                         send(fd, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
-                        usleep(200);
+                    }
                 } else {
                     printf("connection refused.\n");
                     close(fd);

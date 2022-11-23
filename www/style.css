@@ -1,6 +1,6 @@
 @import url('https://fonts.cdnfonts.com/css/montserrat');
 
-body
+body, html
 {
     margin: auto;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
