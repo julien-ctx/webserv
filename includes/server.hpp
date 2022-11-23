@@ -11,6 +11,8 @@
 #define MAX_EVENTS 32
 #define MAX_MSG_SIZE 1024
 
+// https://nima101.github.io/kqueue_server
+
 struct client_data {
     int fd;
 } clients[NUM_CLIENTS];
@@ -45,6 +47,7 @@ private:
     struct sockaddr_in _addr;
     int _port;
     char _buf[BUFFER_SIZE];
+    struct kevent ev_set;
 
 public:
 	/* ----- Constructors ----- */
@@ -76,7 +79,7 @@ public:
 
     void listener()
     {
-        std::cout << "localhost:" + std::to_string(this->_port) << std::endl;
+        std::cout << BLUE << "[SERVER] " << "localhost:" + std::to_string(this->_port) << std::endl << RESET;
         if (listen(this->_fd, 5) < 0) // Change number 5 later
 		    exit_error("listen function failed");
       
@@ -86,50 +89,56 @@ public:
     {
         (void)client;
         int kq = kqueue();
-        struct kevent evSet1;
-        EV_SET(&evSet1, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-        kevent(kq, &evSet1, 1, NULL, 0, NULL);
+        EV_SET(&this->ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        kevent(kq, &this->ev_set, 1, NULL, 0, NULL);
 
-    struct kevent evSet;
-    struct kevent evList[MAX_EVENTS];
-    struct sockaddr_storage addr;
-    socklen_t socklen = sizeof(addr);
-    int j = 0;
-    while (1) {
-        j++;
-        int num_events = kevent(kq, NULL, 0, evList, MAX_EVENTS, NULL);
-        for (int i = 0; i < num_events; i++) {
-            // receive new connection
-            if (evList[i].ident == (unsigned long)this->_fd) {
-                int fd = accept(evList[i].ident, (struct sockaddr *) &addr, &socklen);
-                if (conn_add(fd) == 0) {
-                    EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-                    kevent(kq, &evSet, 1, NULL, 0, NULL);
-                    if (j == 1) {
+        struct kevent client_ev_set;
+        struct kevent ev_list[MAX_EVENTS];
+        struct sockaddr_storage addr;
+        socklen_t socklen = sizeof(addr);
+        int curr = 0;
+        while (1)
+        {
+            int num_events = kevent(kq, NULL, 0, ev_list, MAX_EVENTS, NULL);
+            for (int i = 0; i < num_events; i++)
+            {
+                int fd = accept(ev_list[i].ident, (struct sockaddr *) &addr, &socklen);
+                if (ev_list[i].ident == (unsigned long)this->_fd)
+                {
+                    if (conn_add(fd) == 0)
+                    {
+                        EV_SET(&client_ev_set, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+                        kevent(kq, &client_ev_set, 1, NULL, 0, NULL);
+                        std::cout << curr << std::endl;
                         send(fd, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
-                        std::cout << "html sent" << std::endl;
+                        send(fd, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
                     }
                     else
                     {
-                        std::cout << "css sent" << std::endl;
-                        send(fd, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
+                        printf("connection refused.\n");
+                        close(fd);
                     }
-                } else {
-                    printf("connection refused.\n");
-                    close(fd);
                 }
-            } // client disconnected
-            else if (evList[i].flags & EV_EOF) {
-                int fd = evList[i].ident;
-                printf("client #%d disconnected.\n", get_conn(fd));
-                EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-                kevent(kq, &evSet, 1, NULL, 0, NULL);
-                conn_del(fd);
-            } // read message from client
-            else if (evList[i].filter == EVFILT_READ) {
-                recv(evList[i].ident, this->_buf, BUFFER_SIZE, 0);
+                else if (ev_list[i].flags & EV_EOF)
+                {
+                    int fd = ev_list[i].ident;
+                    printf("client #%d disconnected.\n", get_conn(fd));
+                    EV_SET(&client_ev_set, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+                    kevent(kq, &client_ev_set, 1, NULL, 0, NULL);
+                    conn_del(fd);
+                } 
+                else if (ev_list[i].filter == EVFILT_READ)
+                {
+                    recv(ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+                    std::cout << std::string(this->_buf) << std::endl;
+                    if (std::string(this->_buf).find("html") != std::string::npos)
+                        curr = HTML;
+                    else if (std::string(this->_buf).find("css") != std::string::npos)
+                        curr = CSS;
+                    else
+                        curr = 0;
+                }
             }
         }
-    }
     }
 };

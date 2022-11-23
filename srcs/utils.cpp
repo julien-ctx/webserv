@@ -2,6 +2,6 @@
 
 void	exit_error(std::string str)
 {
-	std::cout << "Error: " + str << std::endl;
+	std::cout << RED << "Error: " + str << std::endl << RESET;
 	exit(1);
 }
