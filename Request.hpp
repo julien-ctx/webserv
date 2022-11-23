@@ -10,7 +10,7 @@ class Request : public HttpMessage {
 
     public:
 
-Request() : _method(HttpMethod::GET) {}
+Request() : _method(HttpMethod::GET) {}  // vide par default? --> a voir
 ~Request() = default;
 
 void SetMethod(HttpMethod method)
@@ -19,13 +19,13 @@ void SetMethod(HttpMethod method)
 void SetUri(const Uri& uri)
 { _uri = std::move(uri); }
 
-HttpMethod method() const
+HttpMethod GetMethod() const
 { return _method; }
 
-Uri uri() const
+Uri GetUri() const
 { return _uri; }
 
-friend std::string to_string(const Request& request);
+friend std::string to_string(const Request& request); // --> a coder
 
 // transforme une string en une requete
 Request string_to_request(const std::string& request_string)
@@ -51,8 +51,9 @@ Request string_to_request(const std::string& request_string)
         lpos = rpos + 4;  // +4 pour les \r\n\r\n
         rpos = request_string.length();
         if (lpos < rpos) // si il y a quelque chose apres \r\n\r\n --> c'est le body
-            message_body = request_string.substr(lpos, rpos - lpos);
+            message_body = request_string.substr(lpos, rpos - lpos); // no need more path --> 
     }
+    
     iss.clear();  // parse the start line
     iss.str(start_line);
     iss >> method >> path >> version;   // >> = ' ' donc : GET /info.html HTTP/1.1 --> GET>>/info.html>>HTTP/1.1
@@ -60,14 +61,23 @@ Request string_to_request(const std::string& request_string)
         throw std::invalid_argument("Invalid header format");
     request.SetMethod(string_to_method(method));
     request.SetUri(Uri(path));
-    if (string_to_version(version) != request.version())
+    if (version.compare(request.version()) != 0)
         throw std::logic_error("wrong HTTP version");
-
-
-
-
-
-
+    
+    iss.clear();  // parse header fields
+    iss.str(header_lines);
+    while (std::getline(iss, line)) // --> cet overload de getline = gnl en gros
+    {
+        std::istringstream header_stream(line); // 
+        std::getline(header_stream, key, ':'); // getline until ':'
+        std::getline(header_stream, value);
+    // need delete whitespace for the two string        faire une ft de ca? --> a voir
+        key = DelWhiteSpace(key);
+        value = DelWhiteSpace(value);
+        request.SetHeader(key, value);
+    }
+    request.SetBody(message_body);
+    return request;
 }
 
     private:
@@ -75,4 +85,4 @@ Request string_to_request(const std::string& request_string)
 HttpMethod  _method;
 Uri         _uri;
 
-}
+};
