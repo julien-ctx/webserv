@@ -87,6 +87,7 @@ public:
 
     void launch(Client &client, Response &resp)
     {
+        (void)resp;
         (void)client;
         int kq = kqueue();
         EV_SET(&this->ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
@@ -96,22 +97,18 @@ public:
         struct kevent ev_list[MAX_EVENTS];
         struct sockaddr_storage addr;
         socklen_t socklen = sizeof(addr);
-        int curr = 0;
         while (1)
         {
             int num_events = kevent(kq, NULL, 0, ev_list, MAX_EVENTS, NULL);
             for (int i = 0; i < num_events; i++)
             {
-                int fd = accept(ev_list[i].ident, (struct sockaddr *) &addr, &socklen);
                 if (ev_list[i].ident == (unsigned long)this->_fd)
                 {
+                    int fd = accept(ev_list[i].ident, (struct sockaddr *) &addr, &socklen);
                     if (conn_add(fd) == 0)
                     {
                         EV_SET(&client_ev_set, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
                         kevent(kq, &client_ev_set, 1, NULL, 0, NULL);
-                        std::cout << curr << std::endl;
-                        send(fd, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
-                        send(fd, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
                     }
                     else
                     {
@@ -130,13 +127,10 @@ public:
                 else if (ev_list[i].filter == EVFILT_READ)
                 {
                     recv(ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-                    std::cout << std::string(this->_buf) << std::endl;
                     if (std::string(this->_buf).find("html") != std::string::npos)
-                        curr = HTML;
+                        send(ev_list[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
                     else if (std::string(this->_buf).find("css") != std::string::npos)
-                        curr = CSS;
-                    else
-                        curr = 0;
+                        send(ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
                 }
             }
         }
