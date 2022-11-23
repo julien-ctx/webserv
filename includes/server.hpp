@@ -81,15 +81,8 @@ public:
 		    exit_error("listen function failed");
       
     }
-    void accepter(Client &client)
-    {
-        socklen_t size = client.getSize();
-        client.setFd(accept(this->_fd, (struct sockaddr *)&this->_addr, &size));
-        if (client.getFd() < 0)
-            exit_error("accept function failed");
-    }
 
-    void responder(Client &client, Response &resp)
+    void launch(Client &client, Response &resp)
     {
         (void)client;
         int kq = kqueue();
@@ -135,7 +128,6 @@ public:
             } // read message from client
             else if (evList[i].filter == EVFILT_READ) {
                 recv(evList[i].ident, this->_buf, BUFFER_SIZE, 0);
-                std::cout << this->_buf << std::endl;
             }
         }
     }
