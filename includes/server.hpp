@@ -127,10 +127,14 @@ public:
                 else if (ev_list[i].filter == EVFILT_READ)
                 {
                     recv(ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+                    std::cout << this->_buf << std::endl;
                     if (std::string(this->_buf).find("html") != std::string::npos)
-                        send(ev_list[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
+                        send(ev_list[i].ident, resp.getIndex("./data/index.html").c_str(), resp.getDataSize(), 0);
                     else if (std::string(this->_buf).find("css") != std::string::npos)
-                        send(ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
+                        send(ev_list[i].ident, resp.getCSS("./data/style.css").c_str(), resp.getDataSize(), 0);
+                    else if (std::string(this->_buf).find("favicon") != std::string::npos)
+                        send(ev_list[i].ident, resp.getFav("./data/favicon.ico").c_str(), resp.getDataSize(), 0);
+                    close(ev_list[i].ident);
                 }
             }
         }

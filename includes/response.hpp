@@ -64,4 +64,20 @@ public:
 		file.close();
 		return this->_content;
     }
+
+	std::string getFav(std::string const path)
+    {
+		this->_content = "";
+		this->_content += "HTTP/1.1 200 OK\n";
+		this->_content += "Content-Type: image/avif\n\n";
+		std::ifstream file;
+		file.open(path);
+		if (!file)
+			exit_error("opening index failed");
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		this->_content += buffer.str();
+		file.close();
+		return this->_content;
+    }
 };
