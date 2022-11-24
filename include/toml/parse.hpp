@@ -64,12 +64,16 @@ namespace TOML
 		bool	str_is_bool(type_string str);
 		bool	str_is_date(type_string str);
 		bool	str_is_array(type_string str);
+		bool	only_binary(type_string str);
+		bool	only_octal(type_string str);
 		//utiles 
 		type_string	check_empty_string(type_string str, int len);
 		type_string	double_quote_change_string(type_string str);
-		bool 		parse::unicode_interpreter(size_t pos, type_string &str);
-        void 		wspace_trimmer(size_t pos, type_string &str);
+		bool		parse::unicode_interpreter(size_t pos, type_string &str);
+        void		wspace_trimmer(size_t pos, type_string &str);
 		float		atof(type_string str);
+		float		str_base_to_int(type_string str, size_t base);
+		float		char_to_int(char c);
 
 
     }

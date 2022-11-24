@@ -18,7 +18,11 @@ namespace TOML
             else
             {
                 if (!val.substr(0, 3).compare("'''") )
+                {
                     val = check_empty_string(val, 6);
+                    if (val[0] == '\n')
+                        val.erase(0, 1);
+                }
                 else
                     val = check_empty_string(val, 2);
             }
@@ -27,7 +31,7 @@ namespace TOML
         else if (str_is_nbr(val))
         {
             TOML::types	t;
-            if (val.compare("false") == 0 || val.compare("true") == 0)
+            if (str_is_bool(val))
                 t = T_bool;
             else if (str_is_int(val))
                 t = T_int;
@@ -49,12 +53,7 @@ namespace TOML
         return false;
     }
 
-    bool    parse::is_hexa(char c)
-    {
-        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'))
-            return true;
-        return false;
-    }
+    
 
     bool    parse::is_lower(char c)
     {
@@ -77,7 +76,7 @@ namespace TOML
         return false;
     }
 
-        bool    parse::str_is_string(type_string str)
+    bool    parse::str_is_string(type_string str)
     {
         if (str.length() >= 6
             && ((str.substr(0, 3).compare("\"\"\"") == 0 && str.substr(str.length() - 3, 3).compare("\"\"\"") == 0)
@@ -85,24 +84,64 @@ namespace TOML
         {
             if (str[0] == '"')
             {
+				size_t	count_dquote = 0;
                 for (size_t i = 3; i < str.length() - 3; i++)
+				{
                     if (i > 3 && str[i - 1] == '\\' && !valid_antislash(str[i]))
                         return false;
-                if (str[str.length() - 4] == '\\')
+					if (str[i] == '"' && str[i - 1] != '\\')
+						count_dquote++;
+					else
+						count_dquote = 0;
+					if (count_dquote >= 3)
+						return false;
+				}
+                if (str[str.length() - 4] == '\\'  && str[str.length() - 5] != '\\')
                     return false;
+            }
+			if (str[0] == '\'')
+            {
+				size_t	count_quote = 0;
+                for (size_t i = 3; i < str.length() - 3; i++)
+				{
+					if (str[i] == '\'')
+						count_quote++;
+					else
+						count_quote = 0;
+					if (count_quote >= 3)
+						return false;
+				}
             }
             return true;
         }
-        if (str.length() >= 3 && (str[0] == '"' && str[str.length() - 1] == '"'
-            || str[0] == '\'' && str[str.length() - 1] == '\''))
+        if (str.length() >= 3 && ((str[0] == '"' && str[str.length() - 1] == '"') || (str[0] == '\'' && str[str.length() - 1] == '\'')))
         {
             if (str[0] == '"')
             {
                 for (size_t i = 1; i < str.length() - 1; i++)
+				{
                     if (i > 1 && str[i - 1] == '\\' && (!valid_antislash(str[i]) || is_whitespace(str[i]) || str[i] == '"'))
                         return false;
+
+					if (i > 1 && str[i - 1] == '\\' && str[i] == 'u')
+					{
+						if (str.size() < 8 )
+							return false;
+						for(size_t j = i + 1; j < i + 5; j++)
+							if (!is_hexa(str[j]))
+								return false;
+					}
+					if (str[i] == '\n')
+						return false;
+				}
                 if (str[str.length() - 2] == '\\')
                     return false;
+            }
+			if (str[0] == '\'')
+            {
+				for (size_t i = 1; i < str.length() - 1; i++)
+					if (str[i] == '\n')
+						return false;
             }
             return true;
         }
@@ -116,30 +155,58 @@ namespace TOML
         return false;
     }
 
-	bool	str_is_int(type_string str)
+	bool	parse::str_is_int(type_string str)
     {
         size_t  count_nbr = 0;
         for (size_t i = 0; i < str.lenght(); i++)
         {
             if (i == 0 && str[i] != '-' && str[i] != '+' && (str[i] < '0' || str[i] > '9'))
                 return false;
-            if (i == 1 && (str[i] < '0' || str[i] > '9')
-                && (str[i] != '_' || str[i - 1] < '0' || str[i - 1] > '9')
-                && (str[i] != 'x' || str[i - 1] != '0')
-                && (str[i] != 'o' || str[i - 1] != '0')
-                && (str[i] != 'b' || str[i - 1] != '0'))
-                return false;
+            if (i == 1 && (str[i] < '0' || str[i] > '9') && (str[i] != '_' || str[0] < '0' || str[0] > '9')
+                && (str[i] != 'x' || str[0] != '0'))
+                {
+                    if (str[i] == 'o' && str[0] == '0' && str.length() > 2 && only_octal(str.substr(2, str.length() - 2)))
+                        break;
+                    else if (str[i] == 'b' && str[0] == '0' && str.length() > 2 && only_binary(str.substr(2, str.length() - 2)))
+                        break;
+                    else return false;
+                }
             if (i > 1 && (str[i] < '0' || str[i] > '9')
                 && (str[i] != '_' || str[1] != 'x' || count_nbr != 4)
-                && (str[i] != '_' || str[1] == 'o' || str[1] == 'b' || str[1] == 'x' || !count_nbr || count_nbr > 3))
+                && (!is_hexa(str[i]) || str[1] != 'x')
+                && (str[i] != '_' || str[1] == 'x' || !count_nbr || count_nbr > 3))
                 return false;
             if (i == '_')
                 count_nbr = 0;
-            else if ((str[i] >= '0' || str[i] <= '9'))
+            else if (is_hexa(str[i]) && (i != 1 || str[i] != 'b'))
                 count_nbr++;
         }
-        if ((str[str.lenght() - 1] < '0' || str[str.lenght() - 1] > '9'))
+        if ((str[str.lenght() - 1] < '0' || str[str.length() - 1] > '9'))
             return false;
+        return true;
+    }
+
+	bool	parse::str_is_float(type_string str)
+    {
+        bool    exponent = false;
+        for (size_t i = 0; i < str.lenght(); i++)
+        {
+            if (i == 0 && str[i] != '-' && str[i] != '+' && (str[i] < '0' || str[i] > '9'))
+                return false;
+            if (i > 0  && (str[i] < '0' || str[i] > '9'))
+            {
+                if (str[i] == '-' || str[i] == '+')
+                    if (str[i - 1] != 'e' && str[i - 1] != 'E')
+                        return false;
+                else if (str[i] == 'e' || str[i] == 'E' || str[i] == '.')
+                    if (exponent || str[i - 1] == '.')
+                        return false;
+                else
+                    return false;
+                if (str[i] == 'e' || str[i] == 'E')
+                    exponent = true;
+            }
+        }
         return true;
     }
 
@@ -148,6 +215,21 @@ namespace TOML
         if (str.compare("true") == 0 || str.compare("false") == 0)
             return true;
         return false;
+    }
+	bool	parse::only_binary(type_string str)
+    {
+        for (size_t i = 0; i < str.length(); i++)
+            if (str[i] != '0' && str[i] != '1')
+                return false;
+        return true;
+    }
+
+    bool	parse::only_octal(type_string str)
+    {
+        for (size_t i = 0; i < str.length(); i++)
+            if (str[i] < '0' || str[i] > '7')
+                return false;
+        return true;
     }
 
 
@@ -242,12 +324,126 @@ namespace TOML
         return false;
     }
 
-    void parse::wspace_trimmer(size_t pos, type_string &str)
+    void	parse::wspace_trimmer(size_t pos, type_string &str)
     {
         size_t  i = pos;
-        while(is_whitespace(str[i]))
-            i++;
-        str.erase(pos, i);
+		size_t	count= 0;
+        while(is_whitespace(str[i++]))
+            count++;
+        str.erase(pos, count);
     }
+
+    float	parse::atof(type_string str)
+    {
+        //bool
+		if (str.compare("true") == 0)
+			return 1;
+		if (str.compare("false") == 0)
+			return 0;
+		
+		float	nbr;
+		//int
+		if (str_is_int(str))
+		{
+			//supress every underscore
+			for (size_t i = 0; i < str.length() ; i++)
+			{
+				if (str[i] == '_' || str[i] == '+')
+				{
+					str.erase(i, 1);
+                    if (i > 0)
+					    i--;
+				}
+			}
+			//convert to binary, octal or hexadecimal
+			if (str[1] == 'b')
+				nbr = str_base_to_int(str.substr(2, str.length() - 2), 2);
+			else if (str[1] == 'o')
+				nbr = str_base_to_int(str.substr(2, str.length() - 2), 8);
+			else if (str[1] == 'x')
+				nbr = str_base_to_int(str.substr(2, str.length() - 2), 16);
+			else
+				nbr = str_base_to_int(str, 10);
+		}
+		//float
+		else
+		{
+            //using dot for knowing where is the comma
+            //using expo for knowing where is exponantiel
+            size_t  dot = 0;
+            size_t  is_expo = 0;
+            for (size_t i = 0; i < str.length() ; i++)
+            {
+                if (str[i] == '.')
+                    dot = i;
+                if (str[i] == '.' || str[i] == '+')
+                {
+                    str.erase(i, 1);
+                    if (i > 0)
+                    {
+					    i--;
+                        is_expo--;
+                    }
+                    
+                }
+                is_expo++;
+                if (str[i] == 'e' || str[i] == 'E')
+                    break;
+            }
+            nbr = str_base_to_int(str.substr(0, is_expo), 10);
+            //dividing to the original comma (what ?)
+            size_t  ten = 1;
+            if (dot > 0)
+            {
+                dot = (is_expo - dot);
+                for (size_t i = 0; i < dot ; i++)
+                    ten *= 10;
+                nbr /= ten;
+                ten = 1;
+            }
+            //multiplying with the exponential
+            if (is_expo < str.length())
+            {
+                is_expo = static_cast<size_t>(str_base_to_int(str.substr(is_expo + 1, str.length() - is_expo), 10));
+                for (size_t i = 0; i < is_expo; i++)
+                    ten *= 10;
+                nbr *= ten;
+            }
+		}
+		return nbr;
+    }
+
+	float		parse::str_base_to_int(std::string str, size_t base)
+	{
+		float	nbr = 0;
+		float	power;
+        bool  minus = false;
+        if (str[0] == '-')
+        {
+            str.erase(0, 1);
+            minus = true;
+        }
+		for (size_t i = 0; i <  str.length(); i++)
+		{
+			power = 1;
+			for (size_t j = 0; j <  (str.length() - i - 1); j++)
+				power *= base;
+			nbr += (power * char_to_int(str[i]));
+		}
+        if (minus)
+            nbr *= (-1);
+		return nbr;
+	}
+
+	float		parse::char_to_int(char c)
+	{
+		if (c >= '0' && c <= '9')
+			return static_cast<float>(c - 48);
+		if (c >= 'a' && c <= 'f')
+			return static_cast<float>(c - 87);
+		if (c >= 'A' && c <= 'F')
+			return static_cast<float>(c - 55);
+		return 0;
+	}
 
 }
