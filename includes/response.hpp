@@ -36,6 +36,7 @@ public:
 
 	std::string getIndex(std::string const path)
     {
+		this->_content = "";
 		this->_content += "HTTP/1.1 200 OK\n";
 		this->_content += "Content-Type: text/html\n\n";
 		std::ifstream file;
@@ -69,7 +70,7 @@ public:
     {
 		this->_content = "";
 		this->_content += "HTTP/1.1 200 OK\n";
-		this->_content += "Content-Type: image/avif\n\n";
+		this->_content += "Content-Type: image/x-icon\n\n";
 		std::ifstream file;
 		file.open(path);
 		if (!file)
