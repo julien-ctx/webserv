@@ -72,14 +72,14 @@ public:
     
     void binder()
     {
+        int yes = 1;
+        if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
+            exit_error("setsockopt function failed");
         if (bind(this->_fd, (const struct sockaddr *)&this->_addr, sizeof(this->_addr)) < 0)
         {
             close(this->_fd);
             exit_error("bind function failed");
         }
-        int yes = 1;
-        if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
-            exit_error("setsockopt function failed");
     }
 
     void listener()
@@ -87,7 +87,6 @@ public:
         std::cout << BLUE << "[SERVER] " << "localhost:" + std::to_string(this->_port) << std::endl << RESET;
         if (listen(this->_fd, 5) < 0) // Change number 5 later
 		    exit_error("listen function failed");
-      
     }
 
     void launch(Client &client, Response &resp)
