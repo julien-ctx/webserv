@@ -1,17 +1,42 @@
 #pragma once
 
 #include "utils.hpp"
-
+#include "Uri.hpp"
+#include "HttpMessages.hpp"
 // A Request object represents a single HTTP request
 // It have method n URI(url) so that the server can identify
 // the corresponding resource and action
+
+std::string DelWhiteSpace(std::string str)
+{
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        if ( std::isspace(str[i]) != 0)
+        {
+            str.erase(i, 1);
+            i -= 1;
+        }
+    }
+    return str;
+}
+
+int string_to_method(const std::string& method_string) {
+if (method_string == "GET")
+    return 0;
+else if (method_string == "POST")
+    return 1;
+else if (method_string == "DELETE")
+    return 2;
+else
+    throw std::invalid_argument("Unexpected HTTP method");
+}
 
 class Request : public HttpMessage {
 
     public:
 
 Request() : _method(0) {}  // vide par default? --> a voir | 0 pour GET
-~Request();
+~Request() {}
 
 void SetMethod(int method)
 { _method = method; }
@@ -86,3 +111,5 @@ int  _method;
 Uri         _uri;
 
 };
+
+

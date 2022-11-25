@@ -1,6 +1,5 @@
-#pragma once 
-
-//#include "utils.hpp"
+#ifndef URI_H
+#define URI_H
 
 
 // Define object that can be used to represent a Unique Resource Identifier
@@ -59,3 +58,5 @@ std::string     _host;
 std::uint16_t   _port; // size_t , uint16_t --> a voir 
 
 };
+
+#endif

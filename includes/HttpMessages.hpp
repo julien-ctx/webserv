@@ -22,7 +22,7 @@ class HttpMessage {
     public:
 
 HttpMessage() : _version("HTTP/1.1") {}
-virtual ~HttpMessage();
+virtual ~HttpMessage() {}
 
 void SetHeader(const std::string& key, const std::string& value)
 { _headers[key] = value; }

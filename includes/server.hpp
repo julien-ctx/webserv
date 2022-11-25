@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "client.hpp"
 #include "response.hpp"
+#include "request.hpp"
 
 #define BUFFER_SIZE 30000
 #define CSS 42
@@ -10,6 +11,16 @@
 #define NUM_CLIENTS 1024
 #define MAX_EVENTS 32
 #define MAX_MSG_SIZE 1024
+
+#define RESET   "\033[0m"
+#define BLACK   "\033[1m\033[30m"      /* Bold Black */
+#define RED     "\033[1m\033[31m"      /* Bold Red */
+#define GREEN   "\033[1m\033[32m"      /* Bold Green */
+#define YELLOW  "\033[1m\033[33m"      /* Bold Yellow */
+#define BLUE    "\033[1m\033[34m"      /* Bold Blue */
+#define MAGENTA "\033[1m\033[35m"      /* Bold Magenta */
+#define CYAN    "\033[1m\033[36m"      /* Bold Cyan */
+#define WHITE   "\033[1m\033[37m"      /* Bold White */
 
 struct client_data
 {
@@ -57,7 +68,7 @@ public:
 	/* ----- Constructors ----- */
     Server() : _request() {}
 
-    Server(int port) : _request(), _port(port)
+    Server(int port) : _port(port), _request()
     {
         if ((this->_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
             exit_error("socket function failed");
