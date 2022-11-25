@@ -14,6 +14,12 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netdb.h>
+#include <fcntl.h>
+
+#define BUFFER_SIZE 30000
+#define NUM_CLIENTS 1024
+#define MAX_EVENTS 32
+#define MAX_MSG_SIZE 1024
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */

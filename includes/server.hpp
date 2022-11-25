@@ -4,38 +4,43 @@
 #include "client.hpp"
 #include "response.hpp"
 
-#define BUFFER_SIZE 30000
-#define CSS 42
-#define HTML 43
-#define NUM_CLIENTS 1024
-#define MAX_EVENTS 32
-#define MAX_MSG_SIZE 1024
-
-// https://nima101.github.io/kqueue_server
-
-struct client_data {
+struct client_data
+{
     int fd;
-} clients[NUM_CLIENTS];
+} client;
 
-int get_conn(int fd) {
+int get_conn(int fd)
+{
+    struct client_data clients[NUM_CLIENTS];
+    std::memset(clients, 0, sizeof(clients));
     for (int i = 0; i < NUM_CLIENTS; i++)
         if (clients[i].fd == fd)
             return i;
     return -1;
 }
 
-int conn_add(int fd) {
-    if (fd < 1) return -1;
+int conn_add(int fd)
+{
+    struct client_data clients[NUM_CLIENTS];
+    std::memset(clients, 0, sizeof(clients));
+    if (fd < 1)
+        return -1;
     int i = get_conn(0);
-    if (i == -1) return -1;
+    if (i == -1)
+        return -1;
     clients[i].fd = fd;
     return 0;
 }
 
-int conn_del(int fd) {
-    if (fd < 1) return -1;
+int conn_del(int fd)
+{
+    struct client_data clients[NUM_CLIENTS];
+    std::memset(clients, 0, sizeof(clients));
+    if (fd < 1)
+        return -1;
     int i = get_conn(fd);
-    if (i == -1) return -1;
+    if (i == -1)
+        return -1;
     clients[i].fd = 0;
     return close(fd);
 }
@@ -47,7 +52,8 @@ private:
     struct sockaddr_in _addr;
     int _port;
     char _buf[BUFFER_SIZE];
-    struct kevent ev_set;
+    struct kevent _ev_set;
+    int _kq;
 
 public:
 	/* ----- Constructors ----- */
@@ -55,11 +61,17 @@ public:
 
     Server(int port) : _port(port)
     {
-        this->_fd = socket(AF_INET, SOCK_STREAM, 0);
+        // Creates the socket
+        if ((this->_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+            exit_error("socket function failed");
+        // Chooses IPv4
         this->_addr.sin_family = AF_INET;
+        // Defines the port
         this->_addr.sin_port = htons(port);
+        // Chooses the local IP
         this->_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
+        this->_kq = 0;
     }
 
     ~Server() {}
@@ -67,84 +79,88 @@ public:
     
     void binder()
     {
+        // Allows kernel to reuse the address. Bind function now works instantaneously
+        int yes = 1;
+        if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
+        {
+            close(this->_fd);
+            exit_error("setsockopt function failed");
+        }
+        // Associates the socket with local address
         if (bind(this->_fd, (const struct sockaddr *)&this->_addr, sizeof(this->_addr)) < 0)
         {
             close(this->_fd);
             exit_error("bind function failed");
         }
-        int yes = 1;
-        if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
-            exit_error("setsockopt function failed");
     }
 
     void listener()
     {
         std::cout << BLUE << "[SERVER] " << "localhost:" + std::to_string(this->_port) << std::endl << RESET;
-        if (listen(this->_fd, 5) < 0) // Change number 5 later
+        // Listens on server fd, with a 128 pending connexion maximum
+        if (listen(this->_fd, SOMAXCONN) < 0)
+        {
+            close(this->_fd);
 		    exit_error("listen function failed");
-      
+        }
     }
 
     void launch(Client &client, Response &resp)
     {
-        (void)resp;
-        (void)client;
-        int kq = kqueue();
-        EV_SET(&this->ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-        kevent(kq, &this->ev_set, 1, NULL, 0, NULL);
-
-        struct kevent client_ev_set;
-        struct kevent ev_list[MAX_EVENTS];
-        struct sockaddr_storage addr;
-        socklen_t socklen = sizeof(addr);
-        while (1)
+        // Creates an empty event queue
+        // https://man.openbsd.org/kqueue.2#:~:text=triggered%20the%20filter.-,RETURN%20VALUES,the%20value%20given%20by%20nevents%20.
+        if ((this->_kq = kqueue()) < 0)
         {
-            int num_events = kevent(kq, NULL, 0, ev_list, MAX_EVENTS, NULL);
+            close(this->_fd);
+            exit_error("kqueue function failed");
+        }
+        // EV_SET(&kev, ident, filter, flags, fflags, data, udata);
+        // Binds data to ev_set. Filter is the event we want to track.
+        EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+        // Uses ev_set to register our interest in the previously specified event, and adds it to kq
+        // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
+        kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+        while ("Webserv des boss")
+        {
+            std::cout << "Before\n";
+            int num_events = kevent(this->_kq, NULL, 0, client.getEvList(), MAX_EVENTS, NULL);
+            std::cout << "After\n";
             for (int i = 0; i < num_events; i++)
             {
-                if (ev_list[i].ident == (unsigned long)this->_fd)
+                if (client.getEvList()[i].ident == (uintptr_t)this->_fd)
                 {
-                    int fd = accept(ev_list[i].ident, (struct sockaddr *) &addr, &socklen);
-                    if (conn_add(fd) == 0)
+                    client.setFd(accept(client.getEvList()[i].ident, (struct sockaddr *) &client.getAddr(), client.getSocklen()));
+                    if (!conn_add(client.getFd()))
                     {
-                        EV_SET(&client_ev_set, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-                        kevent(kq, &client_ev_set, 1, NULL, 0, NULL);
+                        EV_SET(&client.getEvSet(), client.getFd(), EVFILT_READ, EV_ADD, 0, 0, NULL);
+                        kevent(this->_kq, &client.getEvSet(), 1, NULL, 0, NULL);
                     }
                     else
                     {
-                        printf("connection refused.\n");
-                        close(fd);
+                        std::cout << GREEN << "[CLIENT] Connexion refused" << std::endl << RESET;
+                        close(client.getFd());
                     }
                 }
-                else if (ev_list[i].flags & EV_EOF)
+                else if (client.getEvList()[i].flags & EV_EOF)
                 {
-                    int fd = ev_list[i].ident;
-                    printf("client #%d disconnected.\n", get_conn(fd));
-                    EV_SET(&client_ev_set, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-                    kevent(kq, &client_ev_set, 1, NULL, 0, NULL);
-                    conn_del(fd);
+                    client.setFd(client.getEvList()[i].ident);
+                    EV_SET(&client.getEvSet(), client.getFd(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+                    kevent(this->_kq, &client.getEvSet(), 1, NULL, 0, NULL);
+                    conn_del(client.getFd());
                 } 
-                else if (ev_list[i].filter == EVFILT_READ)
+                else if (client.getEvList()[i].filter == EVFILT_READ)
                 {
-                    std::cout << i << std::endl;
-                    recv(ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-                    std::cout << this->_buf << std::endl;
+                    // This is the part where requests and responses have to be handled
+                    recv(client.getEvList()[i].ident, this->_buf, BUFFER_SIZE, 0);
+                    std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
                     if (std::string(this->_buf).find("html") != std::string::npos)
-                    {
-                        send(ev_list[i].ident, resp.getIndex("./data/index.html").c_str(), resp.getDataSize(), 0);
-                        std::cout << GREEN << "Sent HTML\n" << RESET;
-                    }
+                        send(client.getEvList()[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
                     else if (std::string(this->_buf).find("css") != std::string::npos)
-                    {
-                        send(ev_list[i].ident, resp.getCSS("./data/style.css").c_str(), resp.getDataSize(), 0);
-                        std::cout << GREEN << "Sent CSS\n" << RESET;
-                    }
+                        send(client.getEvList()[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
                     else if (std::string(this->_buf).find("favicon") != std::string::npos)
-                    {
-                        send(ev_list[i].ident, resp.getFav("./data/favicon.ico").c_str(), resp.getDataSize(), 0);
-                        std::cout << GREEN << "Sent favicon\n" << RESET;
-                    }
-                        close(ev_list[i].ident);
+                        send(client.getEvList()[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
+                    std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+                    close(client.getEvList()[i].ident);
                 }
             }
         }
