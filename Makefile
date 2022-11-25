@@ -9,11 +9,11 @@ NAME = webserv
 
 PROJECT = WEBSERV
 
-SRCS = $(addprefix srcs/, main.cpp) \
+SRCS = $(addprefix srcs/, main.cpp utils.cpp) \
 
 OBJS = $(SRCS:.cpp=.o)
 
-CPPFLAGS = 
+CPPFLAGS = -Wall -Wextra -Werror
 
 all: $(NAME)
 
