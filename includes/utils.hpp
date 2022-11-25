@@ -17,8 +17,7 @@
 #include <fcntl.h>
 
 #define BUFFER_SIZE 30000
-#define NUM_CLIENTS 1024
-#define MAX_EVENTS 32
+#define MAX_CLIENTS 128
 #define MAX_MSG_SIZE 1024
 
 #define RESET   "\033[0m"
