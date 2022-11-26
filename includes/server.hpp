@@ -8,6 +8,7 @@
 // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
 // https://man.openbsd.org/kqueue.2#:~:text=triggered%20the%20filter.-,RETURN%20VALUES,the%20value%20given%20by%20nevents%20.
 // https://www.freebsd.org/cgi/man.cgi?query=kevent&sektion=2&n=1
+// https://www.garshol.priv.no/download/text/http-tut.html
 /* --------------------- */
 
 class Server
