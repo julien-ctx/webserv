@@ -8,6 +8,7 @@
 // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
 // https://man.openbsd.org/kqueue.2#:~:text=triggered%20the%20filter.-,RETURN%20VALUES,the%20value%20given%20by%20nevents%20.
 // https://www.freebsd.org/cgi/man.cgi?query=kevent&sektion=2&n=1
+/* --------------------- */
 
 class Server
 {
@@ -94,7 +95,7 @@ public:
     void listener()
     {
         std::cout << BLUE << "[SERVER] " << "localhost:" + std::to_string(this->_port) << std::endl << RESET;
-        // Listens on server fd, with a 128 pending connexion maximum
+        // Listens on server fd, with a 128 (SOMAXCONN) pending connexion maximum
         if (listen(this->_fd, SOMAXCONN) < 0)
         {
             close(this->_fd);
@@ -138,14 +139,6 @@ public:
                         close(client.getFd());
                     }
                 }
-                else if (client.getEvList()[i].flags & EV_EOF)
-                {
-                    std::cout << GREEN << "Disconnected" << std::endl << RESET;
-                    client.setFd(client.getEvList()[i].ident);
-                    EV_SET(&client.getEvSet(), client.getFd(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
-                    kevent(this->_kq, &client.getEvSet(), 1, NULL, 0, NULL);
-                    delete_client(client.getFd());
-                } 
                 else if (client.getEvList()[i].filter == EVFILT_READ)
                 {
                     // This is the part where requests and responses have to be handled
@@ -159,6 +152,7 @@ public:
                         send(client.getEvList()[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
                     std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
                     delete_client(client.getEvList()[i].ident);
+                    std::cout << this->_buf << std::endl;
                 }
             }
         }
