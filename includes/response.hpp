@@ -4,9 +4,6 @@
 #include "server.hpp"
 #include "client.hpp"
 
-#define CSS 42
-#define HTML 43
-
 void	exit_error(std::string str);
 
 class Response

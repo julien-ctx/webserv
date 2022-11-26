@@ -38,7 +38,6 @@ public:
         // Chooses the local IP
         this->_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
-        std::memset(this->_clients, 0, sizeof(this->_clients));
     }
 
     ~Server() {}
@@ -114,7 +113,7 @@ public:
         }
         // EV_SET(&kev, ident, filter, flags, fflags, data, udata);
         // Binds data to ev_set. Filter is the event we want to track.
-        EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+        EV_SET(&this->_ev_set, this->_fd, EVFILT_READ | EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
         // Uses ev_set to register our interest in the previously specified event, and adds it to kq
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
         while ("Webserv des boss")
@@ -124,15 +123,19 @@ public:
             // Loop over all the different events. Currently set to 1 event.
             for (int i = 0; i < num_events; i++)
             {
+                // Checks if event occured on server side
                 if (client.getEvList()[i].ident == (uintptr_t)this->_fd)
                 {
-                    // Get event fd by accepting the incoming connexion
-                    client.setFd(accept(client.getEvList()[i].ident, (struct sockaddr *) &client.getAddr(), client.getSocklen()));
+                    // Gets event fd by accepting the incoming connexion
+                    client.setFd(accept(this->_fd, (struct sockaddr *) &client.getAddr(), client.getSocklen()));
                     // If there is place to accept another connexion, add it to the client fd array.
                     if (!add_client(client.getFd()))
                     {
+                        // Specifies which event should be tracked on client side
                         EV_SET(&client.getEvSet(), client.getFd(), EVFILT_READ, EV_ADD, 0, 0, NULL);
                         kevent(this->_kq, &client.getEvSet(), 1, NULL, 0, NULL);
+                        std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+                        EV_SET(&this->_ev_set, this->_fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
                     }
                     else
                     {
@@ -140,11 +143,10 @@ public:
                         close(client.getFd());
                     }
                 }
-                else if (client.getEvList()[i].filter == EVFILT_READ)
+                else if (this->_ev_set.filter == EVFILT_WRITE)
                 {
                     // This is the part where requests and responses have to be handled
                     recv(client.getEvList()[i].ident, this->_buf, BUFFER_SIZE, 0);
-                    std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
                     if (std::string(this->_buf).find("html") != std::string::npos)
                         send(client.getEvList()[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
                     else if (std::string(this->_buf).find("css") != std::string::npos)
@@ -153,6 +155,7 @@ public:
                         send(client.getEvList()[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
                     std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
                     delete_client(client.getEvList()[i].ident);
+                    EV_SET(&this->_ev_set, this->_fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
                 }
             }
         }
