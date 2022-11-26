@@ -152,7 +152,6 @@ public:
                         send(client.getEvList()[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
                     std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
                     delete_client(client.getEvList()[i].ident);
-                    std::cout << this->_buf << std::endl;
                 }
             }
         }
