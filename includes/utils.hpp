@@ -18,7 +18,6 @@
 #include <vector>
 
 #define BUFFER_SIZE 30000
-#define MAX_CLIENTS 128
 #define MAX_MSG_SIZE 1024
 
 #define RESET   "\033[0m"

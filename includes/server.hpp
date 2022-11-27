@@ -43,15 +43,15 @@ public:
         this->_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
+        std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
     }
 
     ~Server() {}
     /* ------------------------ */
 
-    /* --------- Utils -------- */
     int check_client(int fd)
     {
-        for (int i = 0; i < MAX_CLIENTS; i++)
+        for (int i = 0; i < SOMAXCONN; i++)
             if (this->_clients[i] == fd)
                 return i;
         return -1;
@@ -78,7 +78,6 @@ public:
         this->_clients[i] = 0;
         return close(fd);
     }
-    /* ------------------------ */
     
     void binder()
     {
@@ -108,14 +107,43 @@ public:
         }
     }
 
+    // Accepts the incoming connexion and set the socket ready to read request
     void accepter()
     {
         int client_fd = accept(this->_fd, (struct sockaddr *)&this->_addr, &this->_socklen);
         if (client_fd < 0)
             exit_error("accept function failed");
-        add_client(client_fd);
+        if (add_client(client_fd) < 0)
+        {
+            std::cout << RED << "[CLIENT] connexion denied\n" << RESET;
+            return;
+        }
         EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+    }
+
+    // Receives request and sets the client ready to send the response
+    void request_handler(int &i)
+    {
+        recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+    }
+
+    // Sends the response and sets the socket ready to read the request again
+    void response_handler(int &i, Response &resp)
+    {
+        bool sent = false;
+        if (std::string(this->_buf).find("html") != std::string::npos)
+            sent = send(this->_ev_list[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
+        else if (std::string(this->_buf).find("css") != std::string::npos)
+            sent = send(this->_ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
+        else if (std::string(this->_buf).find("favicon") != std::string::npos)
+            sent = send(this->_ev_list[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
+        if (sent)
+            std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+        delete_client(this->_ev_list[i].ident);
+        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
 
     void launch(Response &resp)
@@ -128,7 +156,6 @@ public:
 
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-
         while (1)
         {
             kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
@@ -136,27 +163,12 @@ public:
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                // Accepts the client connexion request
                 if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ)
-                {
-                    recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-                    std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-                    EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-                }
+                    request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE)
-                {
-                    if (std::string(this->_buf).find("html") != std::string::npos)
-                        send(this->_ev_list[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
-                    else if (std::string(this->_buf).find("css") != std::string::npos)
-                        send(this->_ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
-                    else if (std::string(this->_buf).find("favicon") != std::string::npos)
-                        send(this->_ev_list[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
-                    std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
-                    delete_client(this->_ev_list[i].ident);
-                    EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-                }
+                    response_handler(i, resp);
             }
         }
     }
