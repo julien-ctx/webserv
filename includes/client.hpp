@@ -13,8 +13,9 @@ private:
 
 public:
 	/* ----- Constructors ----- */
-	Client()
+	Client(int fd)
 	{
+		this->_fd = fd;
 		this->_socklen = sizeof(this->_addr);
 	}
 

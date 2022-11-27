@@ -5,13 +5,12 @@
 void *serv_thread(void *server)
 {
 	Response resp;
-	Client client;
 	Server *serv;
 
 	serv = (Server *)server;
 	serv->binder();
 	serv->listener();
-	serv->launch(client, resp);
+	serv->launch(resp);
 	return NULL;
 }
 

@@ -15,6 +15,7 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <vector>
 
 #define BUFFER_SIZE 30000
 #define MAX_CLIENTS 128

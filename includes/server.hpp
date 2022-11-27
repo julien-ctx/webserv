@@ -17,10 +17,14 @@ private:
     int _fd;
     struct sockaddr_in _addr;
     int _port;
+
+    int _kq;
     char _buf[BUFFER_SIZE];
     struct kevent _ev_set;
-    int _kq;
-    int _clients[MAX_CLIENTS];
+    struct kevent _ev_list[SOMAXCONN];
+    socklen_t _socklen;
+
+    int _clients[SOMAXCONN];
 
 public:
 	/* ----- Constructors ----- */
@@ -37,6 +41,7 @@ public:
         this->_addr.sin_port = htons(port);
         // Chooses the local IP
         this->_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
     }
 
@@ -103,59 +108,54 @@ public:
         }
     }
 
-    void launch(Client &client, Response &resp)
+    void accepter()
     {
-        // Creates an empty event queue
+        int client_fd = accept(this->_fd, (struct sockaddr *)&this->_addr, &this->_socklen);
+        if (client_fd < 0)
+            exit_error("accept function failed");
+        add_client(client_fd);
+        EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+    }
+
+    void launch(Response &resp)
+    {
         if ((this->_kq = kqueue()) < 0)
         {
             close(this->_fd);
             exit_error("kqueue function failed");
         }
-        // EV_SET(&kev, ident, filter, flags, fflags, data, udata);
-        // Binds data to ev_set. Filter is the event we want to track.
-        EV_SET(&this->_ev_set, this->_fd, EVFILT_READ | EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
-        // Uses ev_set to register our interest in the previously specified event, and adds it to kq
-        kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
-        while ("Webserv des boss")
+
+        // Registers interest in READ on server's fd and add the event to kqueue.
+        EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+
+        while (1)
         {
-            // Waits for a kq event to occur and then fill ev_list with it + unblock the program
-            int num_events = kevent(this->_kq, NULL, 0, client.getEvList(), 1, NULL);
-            // Loop over all the different events. Currently set to 1 event.
-            for (int i = 0; i < num_events; i++)
+            kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+            // Waits for an event to occur and return number of events catched
+            int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
+            for (int i = 0; i < event_nb; i++)
             {
-                // Checks if event occured on server side
-                if (client.getEvList()[i].ident == (uintptr_t)this->_fd)
+                // Accepts the client connexion request
+                if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
+                    accepter();
+                else if (this->_ev_list[i].filter == EVFILT_READ)
                 {
-                    // Gets event fd by accepting the incoming connexion
-                    client.setFd(accept(this->_fd, (struct sockaddr *) &client.getAddr(), client.getSocklen()));
-                    // If there is place to accept another connexion, add it to the client fd array.
-                    if (!add_client(client.getFd()))
-                    {
-                        // Specifies which event should be tracked on client side
-                        EV_SET(&client.getEvSet(), client.getFd(), EVFILT_READ, EV_ADD, 0, 0, NULL);
-                        kevent(this->_kq, &client.getEvSet(), 1, NULL, 0, NULL);
-                        std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-                        EV_SET(&this->_ev_set, this->_fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-                    }
-                    else
-                    {
-                        std::cout << GREEN << "[CLIENT] Connexion refused" << std::endl << RESET;
-                        close(client.getFd());
-                    }
+                    recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+                    std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+                    EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
                 }
-                else if (this->_ev_set.filter == EVFILT_WRITE)
+                else if (this->_ev_list[i].filter == EVFILT_WRITE)
                 {
-                    // This is the part where requests and responses have to be handled
-                    recv(client.getEvList()[i].ident, this->_buf, BUFFER_SIZE, 0);
                     if (std::string(this->_buf).find("html") != std::string::npos)
-                        send(client.getEvList()[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
+                        send(this->_ev_list[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
                     else if (std::string(this->_buf).find("css") != std::string::npos)
-                        send(client.getEvList()[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
+                        send(this->_ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
                     else if (std::string(this->_buf).find("favicon") != std::string::npos)
-                        send(client.getEvList()[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
+                        send(this->_ev_list[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
                     std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
-                    delete_client(client.getEvList()[i].ident);
-                    EV_SET(&this->_ev_set, this->_fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+                    delete_client(this->_ev_list[i].ident);
+                    EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
                 }
             }
         }
