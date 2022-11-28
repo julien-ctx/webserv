@@ -134,7 +134,7 @@ public:
     {
         bool sent = false;
         if (std::string(this->_buf).find("html") != std::string::npos)
-            sent = send(this->_ev_list[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
+            sent = send(this->_ev_list[i].ident, resp.getIndex("./www/cgi.html").c_str(), resp.getDataSize(), 0);
         else if (std::string(this->_buf).find("css") != std::string::npos)
             sent = send(this->_ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
         else if (std::string(this->_buf).find("favicon") != std::string::npos)
