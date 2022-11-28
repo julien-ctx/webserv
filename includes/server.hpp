@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 #include "response.hpp"
+#include "cgi.hpp"
 
 /* ----- Resources ----- */
 // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
@@ -133,8 +134,10 @@ public:
     void response_handler(int &i, Response &resp)
     {
         bool sent = false;
+
         if (std::string(this->_buf).find("html") != std::string::npos)
-            sent = send(this->_ev_list[i].ident, resp.getIndex("./www/cgi.html").c_str(), resp.getDataSize(), 0);
+            CGI cgi("clock.pl");
+            // sent = send(this->_ev_list[i].ident, resp.getIndex("./www/cgi.html").c_str(), resp.getDataSize(), 0);
         else if (std::string(this->_buf).find("css") != std::string::npos)
             sent = send(this->_ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
         else if (std::string(this->_buf).find("favicon") != std::string::npos)
