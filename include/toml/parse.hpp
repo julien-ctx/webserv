@@ -56,6 +56,7 @@ namespace TOML
 		bool	is_lower(char c);
 		bool	is_upper(char c);
 		bool	is_whitespace(char c);
+		bool	valid_key_char(char c);
 		bool	valid_antislash(char c);
 		bool	str_is_string(type_string str);
 		bool	str_is_nbr(type_string str);
@@ -64,6 +65,7 @@ namespace TOML
 		bool	str_is_bool(type_string str);
 		bool	str_is_date(type_string str);
 		bool	str_is_array(type_string str);
+		bool	str_is_table(type_string str);
 		bool	only_binary(type_string str);
 		bool	only_octal(type_string str);
 		//utiles 
