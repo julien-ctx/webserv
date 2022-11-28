@@ -2,7 +2,8 @@
 
 #include "utils.hpp"
 #include "response.hpp"
-
+#include "request.hpp"
+#include "mime.hpp"
 /* ----- Resources ----- */
 // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
 // https://man.openbsd.org/kqueue.2#:~:text=triggered%20the%20filter.-,RETURN%20VALUES,the%20value%20given%20by%20nevents%20.
@@ -122,31 +123,33 @@ public:
     }
 
     // Receives request and sets the client ready to send the response
-    void request_handler(int &i)
+    Request request_handler(int &i)
     {
+        Request requete;
+
         recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+        return requete;
     }
 
     // Sends the response and sets the socket ready to read the request again
-    void response_handler(int &i, Response &resp)
+    void response_handler(int &i,  Request requete)
     {
         bool sent = false;
-        if (std::string(this->_buf).find("html") != std::string::npos)
-            sent = send(this->_ev_list[i].ident, resp.getIndex("./www/index.html").c_str(), resp.getDataSize(), 0);
-        else if (std::string(this->_buf).find("css") != std::string::npos)
-            sent = send(this->_ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
-        else if (std::string(this->_buf).find("favicon") != std::string::npos)
-            sent = send(this->_ev_list[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
+        Response rep(requete);
+        if (requete._method == 0)
+           sent = rep.methodGET(_ev_list, i);
         if (sent)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
 
-    void launch(Response &resp)
+    void launch()
     {
+        Request requete;
         if ((this->_kq = kqueue()) < 0)
         {
             close(this->_fd);
@@ -165,9 +168,9 @@ public:
                 if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ)
-                    request_handler(i);
+                    requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE)
-                    response_handler(i, resp);
+                    response_handler(i, requete);
             }
         }
     }

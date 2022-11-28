@@ -4,12 +4,44 @@
 #include "utils.hpp"
 
 
+
+
+
+std::string DelWhiteSpace(std::string str)
+{
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        if ( std::isspace(str[i]) != 0)
+        {
+            str.erase(i, 1);
+            i -= 1;
+        }
+    }
+    return str;
+}
+
+int string_to_method(const std::string& method_string) {
+if (method_string == "GET")
+    return 0;
+else if (method_string == "POST")
+    return 1;
+else if (method_string == "DELETE")
+    return 2;
+else
+    throw std::invalid_argument("Unexpected HTTP method");
+}
+
+
+
+
+
 // A Request object represents a single HTTP request
 // It have method n URI(url) so that the server can identify
 // the corresponding resource and action
 
 
-class Request {
+class Request
+{
 
     public:
 
@@ -66,7 +98,6 @@ void string_to_request(const std::string& request_string)
 {
     std::string         start_line, header_lines, message_body;
     std::istringstream  iss;                          // voir https://www.youtube.com/watch?v=KUx9YfHkllk pour plus d'explications
-//    Request             request = Request();                      // return value
     std::string         line, method, path, version;  // for first line
     std::string         key, value;                   // for header
     Uri                 uri;
@@ -94,6 +125,8 @@ void string_to_request(const std::string& request_string)
     if (!iss.good() && !iss.eof())
         throw std::invalid_argument("Invalid header format");
     SetMethod(string_to_method(method));
+    if (path == "/")
+        path += "index.html";
     SetUri(Uri(path));
     if (version.compare(GetVersion()) != 0)
         throw std::logic_error("wrong HTTP version");
@@ -110,11 +143,10 @@ void string_to_request(const std::string& request_string)
         SetHeader(key, value);
     }
     SetBody(message_body);
-//    return request;
 }
 
 
-    private:
+//    private:
 
 std::map<std::string, std::string>  _headers;
 std::string                         _version;
@@ -125,29 +157,3 @@ Uri _uri;
 
 
 };
-
-
-
-std::string DelWhiteSpace(std::string str)
-{
-    for (size_t i = 0; i < str.length(); i++)
-    {
-        if ( std::isspace(str[i]) != 0)
-        {
-            str.erase(i, 1);
-            i -= 1;
-        }
-    }
-    return str;
-}
-
-int string_to_method(const std::string& method_string) {
-if (method_string == "GET")
-    return 0;
-else if (method_string == "POST")
-    return 1;
-else if (method_string == "DELETE")
-    return 2;
-else
-    throw std::invalid_argument("Unexpected HTTP method");
-}

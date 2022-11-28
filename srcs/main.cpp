@@ -9,7 +9,7 @@ void *serv_thread(void *server)
 	serv = (Server *)server;
 	serv->binder();
 	serv->listener();
-	serv->launch(resp);
+	serv->launch();
 	return NULL;
 }
 
