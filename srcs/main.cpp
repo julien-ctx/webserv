@@ -1,5 +1,4 @@
 #include "../includes/server.hpp"
-#include "../includes/client.hpp"
 #include "../includes/response.hpp"
 
 void *serv_thread(void *server)

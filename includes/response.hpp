@@ -2,7 +2,6 @@
 
 #include "utils.hpp"
 #include "server.hpp"
-#include "client.hpp"
 
 void	exit_error(std::string str);
 

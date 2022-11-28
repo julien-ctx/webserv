@@ -1,7 +1,6 @@
 #pragma once
 
 #include "utils.hpp"
-#include "client.hpp"
 #include "response.hpp"
 
 /* ----- Resources ----- */
