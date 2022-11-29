@@ -18,8 +18,7 @@
 #include <vector>
 #include <map>
 
-#define BUFFER_SIZE 50000
-#define MAX_MSG_SIZE 1024
+#define BUFFER_SIZE 30000
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */

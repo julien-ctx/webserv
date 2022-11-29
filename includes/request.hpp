@@ -146,7 +146,7 @@ void string_to_request(const std::string& request_string)
 }
 
 
-//    private:
+// private:
 
 std::map<std::string, std::string>  _headers;
 std::string                         _version;

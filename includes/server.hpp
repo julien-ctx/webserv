@@ -46,7 +46,6 @@ public:
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
-        std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
     }
 
     ~Server() {}
@@ -130,12 +129,12 @@ public:
     {
         Request requete;
 
+        std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-        if (ret < 0)
+        if (ret <= 0)
             exit_error("recv function failed");
         else
             this->_buf[ret] = 0;
-        std::cout << this->_buf << std::endl;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
@@ -143,7 +142,7 @@ public:
     }
 
     // Sends the response and sets the socket ready to read the request again
-    void response_handler(int &i,  Request requete)
+    void response_handler(int &i, Request requete)
     {
         int sent = false;
         Response rep(requete);
@@ -153,6 +152,8 @@ public:
             rep.send_404(_ev_list, i);
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+        if (sent < 0)
+            exit_error("send function failed");
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
