@@ -130,6 +130,7 @@ public:
         Request requete;
 
         recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        std::cout << this->_buf << std::endl;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
