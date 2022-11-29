@@ -1,7 +1,8 @@
 #ifndef URI_H
 #define URI_H
 
-
+#include <map>
+#include <string>
 // Define object that can be used to represent a Unique Resource Identifier
 // which is useful for parsing and request handling.
 // Here we handle only URL (cause no need URN/ISBN)
@@ -24,6 +25,7 @@ class Uri {
 
 Uri() {}
 Uri(std::string path) : _path(path) {}
+Uri(const Uri &u) : _path(u._path) , _scheme(u._scheme), _host(u._host), _port(u._port) {}
 ~Uri() {}
 
 void SetPath(std::string path)
@@ -50,7 +52,7 @@ std::string GetHost()
 std::uint16_t GetPort()
 { return _port; }
 
-    private:
+//    private:
 
 std::string     _path;
 std::string     _scheme;

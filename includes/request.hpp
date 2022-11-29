@@ -1,11 +1,11 @@
 #pragma once
 
-#include "utils.hpp"
 #include "Uri.hpp"
-#include "HttpMessages.hpp"
-// A Request object represents a single HTTP request
-// It have method n URI(url) so that the server can identify
-// the corresponding resource and action
+#include "utils.hpp"
+
+
+
+
 
 std::string DelWhiteSpace(std::string str)
 {
@@ -31,11 +31,21 @@ else
     throw std::invalid_argument("Unexpected HTTP method");
 }
 
-class Request : public HttpMessage {
+
+
+
+
+// A Request object represents a single HTTP request
+// It have method n URI(url) so that the server can identify
+// the corresponding resource and action
+
+
+class Request
+{
 
     public:
 
-Request() : _method(0) {}  // vide par default? --> a voir | 0 pour GET
+Request() : _version("HTTP/1.1")  {}//: _method(0) {}  // vide par default? --> a voir | 0 pour GET
 ~Request() {}
 
 void SetMethod(int method)
@@ -44,20 +54,50 @@ void SetMethod(int method)
 void SetUri(const Uri& uri)
 { _uri = std::move(uri); }
 
+void SetBody(const std::string& body)
+{
+    _body = body;
+    SetBodyLength();
+}
+
+void SetBodyLength()
+{ SetHeader("Content-Length", std::to_string(_body.length())); }
+
+void SetHeader(const std::string& key, const std::string& value)
+{ _headers[key] = value; }
+
+void RemoveHeader(const std::string& key)
+{ _headers.erase(key); }
+
+void ClearHeader()
+{ _headers.clear(); }
+
 int GetMethod() const
 { return _method; }
 
 Uri GetUri() const
 { return _uri; }
 
+std::string GetVersion() const
+{ return _version; }
+
+std::string GetBody() const
+{ return _body; }
+
+std::map<std::string, std::string> GetHeaders() const
+{ return _headers; }
+
+size_t GetBodyLenght() const
+{ return _body.length(); }
+
+
 friend std::string to_string(const Request& request); // --> a coder
 
 // transforme une string en une requete
-Request string_to_request(const std::string& request_string)
+void string_to_request(const std::string& request_string)
 {
     std::string         start_line, header_lines, message_body;
     std::istringstream  iss;                          // voir https://www.youtube.com/watch?v=KUx9YfHkllk pour plus d'explications
-    Request             request = Request();                      // return value
     std::string         line, method, path, version;  // for first line
     std::string         key, value;                   // for header
     Uri                 uri;
@@ -84,9 +124,11 @@ Request string_to_request(const std::string& request_string)
     iss >> method >> path >> version;   // >> = ' ' donc : GET /info.html HTTP/1.1 --> GET>>/info.html>>HTTP/1.1
     if (!iss.good() && !iss.eof())
         throw std::invalid_argument("Invalid header format");
-    request.SetMethod(string_to_method(method));
-    request.SetUri(Uri(path));
-    if (version.compare(request.version()) != 0)
+    SetMethod(string_to_method(method));
+    if (path == "/")
+        path += "index.html";
+    SetUri(Uri(path));
+    if (version.compare(GetVersion()) != 0)
         throw std::logic_error("wrong HTTP version");
     
     iss.clear();  // parse header fields
@@ -96,20 +138,22 @@ Request string_to_request(const std::string& request_string)
         std::istringstream header_stream(line); // 
         std::getline(header_stream, key, ':'); // getline until ':'
         std::getline(header_stream, value);
-    // need delete whitespace for the two string        faire une ft de ca? --> a voir
         key = DelWhiteSpace(key);
         value = DelWhiteSpace(value);
-        request.SetHeader(key, value);
+        SetHeader(key, value);
     }
-    request.SetBody(message_body);
-    return request;
+    SetBody(message_body);
 }
 
-    private:
 
-int  _method;
-Uri         _uri;
+//    private:
+
+std::map<std::string, std::string>  _headers;
+std::string                         _version;
+std::string                         _body;
+
+int _method;
+Uri _uri;
+
 
 };
-
-
