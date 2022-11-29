@@ -46,6 +46,7 @@ public:
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
+        std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
     }
 
     ~Server() {}
@@ -129,7 +130,11 @@ public:
     {
         Request requete;
 
-        recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        if (ret < 0)
+            exit_error("recv function failed");
+        else
+            this->_buf[ret] = 0;
         std::cout << this->_buf << std::endl;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
