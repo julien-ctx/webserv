@@ -3,13 +3,15 @@
 #include "utils.hpp"
 #include "response.hpp"
 #include "request.hpp"
-#include "mime.hpp"
+
 /* ----- Resources ----- */
 // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
 // https://man.openbsd.org/kqueue.2#:~:text=triggered%20the%20filter.-,RETURN%20VALUES,the%20value%20given%20by%20nevents%20.
 // https://www.freebsd.org/cgi/man.cgi?query=kevent&sektion=2&n=1
 // https://www.garshol.priv.no/download/text/http-tut.html
 /* --------------------- */
+
+// data de kevent retourne le nb d'octet a recevoir pour POST !
 
 class Server
 {
@@ -137,11 +139,13 @@ public:
     // Sends the response and sets the socket ready to read the request again
     void response_handler(int &i,  Request requete)
     {
-        bool sent = false;
+        int sent = false;
         Response rep(requete);
         if (requete._method == 0)
            sent = rep.methodGET(_ev_list, i);
-        if (sent)
+        if (sent == -404)
+            rep.send_404(_ev_list, i);
+        if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
@@ -158,6 +162,7 @@ public:
 
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        
         while (1)
         {
             kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);

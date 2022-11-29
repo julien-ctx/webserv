@@ -18,7 +18,7 @@
 #include <vector>
 #include <map>
 
-#define BUFFER_SIZE 30000
+#define BUFFER_SIZE 50000
 #define MAX_MSG_SIZE 1024
 
 #define RESET   "\033[0m"
