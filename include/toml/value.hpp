@@ -40,6 +40,8 @@ namespace   TOML
 
 		public:
 		//constructor & destructor
+		// construct from nothing
+		value(void) {}
 		// construct from a float/int/bool
 		value(type_string key, float nbr, TOML::types t) : _typing(t), _key(key)
 		{
@@ -63,7 +65,31 @@ namespace   TOML
 
 		~value() {}
 
-    }
+		TOML::value& operator=(const TOML::value &copy)
+		{
+			this->_key = copy._key;
+			this->_typing = copy._typing;
+			this->_parent = copy._parent;
+			if (copy._typing == T_string)
+				this->_string = copy._string;
+			else if (copy._typing == T_float)
+				this->_float = copy._float;
+			else if (copy._typing == T_int)
+				this->_int = copy._int;
+			else if (copy._typing == T_bool)
+				this->_bool = copy._bool;
+			else if (copy._typing == T_date_time)
+				this->_date_time = copy._date_time;
+			else if (copy._typing == T_array)
+				this->_array = copy._array;
+			else if (copy._typing == T_table)
+			{
+				this->_array = copy._array;
+				this->_is_array_table = copy._is_array_table;
+			}
+			return *this;
+		}
+    };
 }
 
 #endif

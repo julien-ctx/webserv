@@ -17,7 +17,7 @@ namespace TOML
         T_table,
         T_date_time,
         T_no_type
-    }
+    };
 }
 
 

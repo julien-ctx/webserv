@@ -15,13 +15,13 @@ namespace TOML
         public:
 
 		//Types
-        typedef TOML::value					type_table;
-        typedef __int64_t					type_int;
-        typedef float						type_float;
-        typedef bool						type_bool;
-        typedef std::string					type_string;
-        typedef std::vector<type_table>		type_array;
-        typedef std::tm						type_date_time;
+        typedef TOML::value						type_table;
+        typedef __int64_t						type_int;
+        typedef float							type_float;
+        typedef bool							type_bool;
+        typedef std::string						type_string;
+        typedef std::vector<type_table>			type_array;
+        typedef std::tm							type_date_time;
 
 		typedef std::vector<type_table>::allocator_type	Allocator;
 
@@ -31,27 +31,36 @@ namespace TOML
 
 
 		//iterators
-        typedef std::vector<type_table>::iterator		iterator;
-        typedef std::vector<const type_table>::iterator	const_iterator;
+        typedef type_array::iterator				iterator;
+        typedef type_array::reverse_iterator		reverse_iterator;
 
 		//variable
-		private:
+		//  to do private
+		public:
 		type_table	_root; //the root of all values
 		type_array	_hash_tables; //the array where all values are in it
-		pointer		_here; //the value where we are now
+		pointer		_here; //the table where we are now
 		Allocator	_allocator;
 
 		public:
 		parse(): _root("", false), _hash_tables(type_array()), _here(&_root), _allocator(Allocator()) {}
-		~parse();
+		~parse() {}
 
+		
+		public:
+		iterator			begin() { return this->_hash_tables.begin();}
+		iterator			end() { return this->_hash_tables.end();}
+		reverse_iterator	rbegin() { return this->_hash_tables.rbegin();}
+		reverse_iterator	rend() { return this->_hash_tables.rend();}
+		//  to do private
+		public:
 		//insertion of new values
 		// insertion of int/bool/float
-		private:
-		void	parse::insert(type_string key, type_string val);
-		// insertion of table
-		void	insert_table(type_string key);
+		void	insert(type_string key, type_string val);
+		void	insert_table(type_string key, bool is_array);
 		//parse
+		void	begin_parse(void);
+		void	parse_line(type_string &str);
 		bool	is_hexa(char c);
 		bool	is_lower(char c);
 		bool	is_upper(char c);
@@ -68,17 +77,23 @@ namespace TOML
 		bool	str_is_table(type_string str);
 		bool	only_binary(type_string str);
 		bool	only_octal(type_string str);
-		//utiles 
-		type_string	check_empty_string(type_string str, int len);
+		//utiles
+		type_string	table_last_key(type_string str);
+		type_string	check_empty_string(type_string str, size_t len);
 		type_string	double_quote_change_string(type_string str);
-		bool		parse::unicode_interpreter(size_t pos, type_string &str);
+		bool		unicode_interpreter(size_t pos, type_string &str);
         void		wspace_trimmer(size_t pos, type_string &str);
 		float		atof(type_string str);
 		float		str_base_to_int(type_string str, size_t base);
 		float		char_to_int(char c);
 
+		//searching
+		TOML::value	at_key_parent(type_string key, pointer parent);
+		type_array	by_table(pointer parent);
+		type_array	by_key(type_string key);
 
-    }
+
+    };
 
 }
 

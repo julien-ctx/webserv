@@ -9,7 +9,7 @@ NAME = webserv
 
 PROJECT = WEBSERV
 
-SRCS = $(addprefix srcs/, main.cpp) \
+SRCS = srcs/main.cpp srcs/parse.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 

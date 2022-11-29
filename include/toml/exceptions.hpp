@@ -16,7 +16,7 @@ namespace TOML
 
 		public:
         TypeUndefined(const char *msg) : _msg(msg){}
-        ~TypeUndefined(){}
+        virtual ~TypeUndefined() _NOEXCEPT {}
 		const char *	what(void) const throw()
         {
            return _msg;
@@ -33,11 +33,11 @@ namespace TOML
         {
 			std::stringstream ss;
 
-			ss << what;
+			ss << msg;
 			ss << " at line " << line;
 			_msg = ss.str();
         }
-        ~ErrorParse(){}
+        virtual ~ErrorParse() _NOEXCEPT {}
 		const char *	what(void) const throw()
         {
             return _msg.c_str();

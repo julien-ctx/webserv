@@ -1,4 +1,4 @@
-#include "parse.hpp"
+#include "../include/toml/parse.hpp"
 
 namespace TOML
 {
@@ -6,6 +6,7 @@ namespace TOML
     // interprete and change the string val, so it can be include in the _hash_tables
     void	parse::insert(type_string key, type_string val)
     {
+        type_table new_value;
         if (str_is_string(val))
         {
             if (val[0] == '"')
@@ -24,9 +25,12 @@ namespace TOML
                         val.erase(0, 1);
                 }
                 else
+                {
+                    std::cout << "bruh ?" << std::endl;
                     val = check_empty_string(val, 2);
+                }
             }
-            type_table new_value(key, val);
+            new_value = type_table(key, val);
         }
         else if (str_is_nbr(val))
         {
@@ -37,15 +41,92 @@ namespace TOML
                 t = T_int;
             else
                 t = T_float;
-            type_table new_value(key, TOML::parse::atof(val), t);
+            new_value = type_table(key, TOML::parse::atof(val), t);
         }
-        else if (str_is_array(val))
-        {
+        else
+            throw TypeUndefined("Type undefined !");
+        // to do ou don't bother ? to be continued... ==>
+        // else if (str_is_date(val))
+        // {
             
-        }
+        // }
+        // else if (str_is_array(val))
+        // {
+            
+        // }
+        new_value._parent = this->_here;
+        this->_hash_tables.push_back(new_value);
     }
 
     //parse
+
+    //  parse a line in a document
+	void	parse::parse_line(type_string &str, size_t line_nbr)
+    {
+        // remove all whitespace in the begining and ending
+        wspace_trimmer(0, str);
+        if (str.length() == 0)
+            return ;
+        for (size_t i = str.length() - 1; i > 0 ; i--)
+        {
+            if (!is_whitespace(str[i]))
+            {
+                if (i < str.length() - 1)
+                    wspace_trimmer(i + 1, str);
+                break ;
+            }
+        }
+        size_t  is_bracket = 0;
+        if (str[0] == '[')
+            is_bracket == 1;
+        if (is_bracket)
+        {
+			if (str[str.length() - 1] != ']')
+				throw	ErrorParse("Expected ']' character", line_nbr);
+            if (str[1] == '[')
+				is_bracket++;
+			this->_here = &_root;
+			for (size_t i = is_bracket + 1; i < str.length() )
+			{
+				if (is_bracket == 1)
+				{
+					i--;
+					while (is_whitespace(str[i]))
+						i--;
+					wspace_trimmer(i, str);
+					if (!str_is_table(str.substr(1, str.length() - 1)))
+						throw	ErrorParse("It is a wrong table statement", line_nbr);
+					if (&at_key_parent(str, this->_here) != NULL)
+						throw	ErrorParse("This table already exist", line_nbr);
+					insert_table(table_last_key(str), false);
+					return ;
+				}
+				// else
+				// {
+				// 	i--;
+				// 	while (is_whitespace(str[i]))
+				// 		i--;
+				// 	wspace_trimmer(i, str);
+				// 	if (!str_is_table(str.substr(1, str.length() - 1)))
+				// 		throw	ErrorParse("It is a wrong table statement", line_nbr);
+				// 	if (&at_key_parent(str, this->_here) != NULL)
+				// 		throw	ErrorParse("This table already exist", line_nbr);
+				// 	insert_table(table_last_key(str), false);
+				// 	return ;
+				// }
+			}
+				throw	ErrorParse("Expected ']' character", line_nbr);
+        }
+
+    }
+
+	bool	parse::is_hexa(char c)
+    {
+        if (( c >= '0' && c <= '9') || ( c >= 'a' && c <= 'f') || ( c >= 'A' && c <= 'F'))
+            return true;
+        return false;
+    }
+
     bool    parse::is_whitespace(char c)
     {
         if (c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r')
@@ -67,13 +148,15 @@ namespace TOML
         return false;
     }
 
+    // All valid characters in keys of TOML files
 	bool	parse::valid_key_char(char c)
     {
-        if (is_hexa(c) || c == '"'|| c == '\'' || c == '_' || || c == '.' || is_whitespace(c))
+        if (is_hexa(c) || c == '"'|| c == '\'' || c == '_' || c == '.' || is_whitespace(c) || is_upper(c) || is_lower(c))
             return true;
         return false;
     }
 
+    // Some valid antislash characters in string. Anti slash whitespace is interpreted as trimmed all the whitespace after the anti slash
 	bool	parse::valid_antislash(char c)
     {
         if (c == 'b' || c == 't' || c == 'r' || c == 't' || c == '"'  || c == 'u' || c == '\\' || (is_whitespace(c) && c != '\n'))
@@ -81,8 +164,10 @@ namespace TOML
         return false;
     }
 
+    // all functions begining by "str_is" parse a string and verify if it corespond to this kind of type
     bool    parse::str_is_string(type_string str)
     {
+		size_t	aslash_counter = 0;
         if (str.length() >= 6
             && ((str.substr(0, 3).compare("\"\"\"") == 0 && str.substr(str.length() - 3, 3).compare("\"\"\"") == 0)
             || (str.substr(0, 3).compare("'''") == 0 && str.substr(str.length() - 3, 3).compare("'''") == 0)))
@@ -92,7 +177,7 @@ namespace TOML
 				size_t	count_dquote = 0;
                 for (size_t i = 3; i < str.length() - 3; i++)
 				{
-                    if (i > 3 && str[i - 1] == '\\' && !valid_antislash(str[i]))
+                    if (i > 3 && str[i - 1] == '\\' && !valid_antislash(str[i]) && str[i] != 'n' && aslash_counter % 2 == 1)
                         return false;
 					if (str[i] == '"' && str[i - 1] != '\\')
 						count_dquote++;
@@ -100,6 +185,10 @@ namespace TOML
 						count_dquote = 0;
 					if (count_dquote >= 3)
 						return false;
+					if (str[i] == '\\')
+						aslash_counter++;
+					else
+						aslash_counter = 0;
 				}
                 if (str[str.length() - 4] == '\\'  && str[str.length() - 5] != '\\')
                     return false;
@@ -125,8 +214,9 @@ namespace TOML
             {
                 for (size_t i = 1; i < str.length() - 1; i++)
 				{
-                    if (i > 1 && str[i - 1] == '\\' && (!valid_antislash(str[i]) || is_whitespace(str[i]) || str[i] == '"'))
-                        return false;
+                    if (i > 1 && str[i - 1] == '\\' && (!valid_antislash(str[i]) || is_whitespace(str[i]) || str[i] == '"')
+						&& aslash_counter % 2 == 1)
+						return false;
 
 					if (i > 1 && str[i - 1] == '\\' && str[i] == 'u')
 					{
@@ -138,15 +228,19 @@ namespace TOML
 					}
 					if (str[i] == '\n')
 						return false;
+					if (str[i] == '\\')
+						aslash_counter++;
+					else
+						aslash_counter = 0;
 				}
-                if (str[str.length() - 2] == '\\')
+                if (aslash_counter % 2 == 1)
                     return false;
             }
 			if (str[0] == '\'')
             {
 				for (size_t i = 1; i < str.length() - 1; i++)
-					if (str[i] == '\n')
-						return false;
+					if (str[i] == '\n' || str[i] == '\'')
+                    return false;
             }
             return true;
         }
@@ -233,10 +327,15 @@ namespace TOML
 
     bool    parse::str_is_table(type_string str)
     {
+        //change mode if it is a string or not
         bool    quote_mode = false;
+        //the begining of the string in quote_mode
         size_t  str_begin;
+        //the lenght of the string in quote_mode
         size_t  str_len;
+        //the nature of the string (double quote or normql auote)
 		char	cquote;
+        //verify if there was a space between valid key charcters
 		bool	was_space = false;
 
         for (size_t i = 0; i < str.length(); i++)
@@ -246,35 +345,39 @@ namespace TOML
             if (i == 0 && str[i] == '.')
                 return false;
             if ((!valid_key_char(str[i]) && !quote_mode)
-				||	(i > 0 && !quote_mode && was_space && valid_key_char(str[i]) && !is_whitespace(str[i]) && str[i] != '.'))
-                return false;
-			if ((i == 0 && valid_key_char(str[i]) && !is_whitespace(str[i]))
-				|| (i > 0 && valid_key_char(str[i]) && !is_whitespace(str[i]) && str[i] != '.'
-					&& (is_whitespace(str[i - 1]) || str[i - 1] == '.')))
+				||	(i > 0 && !quote_mode && was_space && valid_key_char(str[i]) && !is_whitespace(str[i]) && str[i] != '.' && is_whitespace(str[i - 1])))
+                	return false;
+			if (i == 0 || (i > 0 && valid_key_char(str[i]) && !is_whitespace(str[i])
+                && str[i] != '.' && (is_whitespace(str[i - 1]) || str[i - 1] == '.')))
 				was_space = true;
-			if (str[i] != '.' && !quote_mode)
+			if (str[i] == '.' && !quote_mode)
 				was_space = false;
             if (str[i] == '"' || str[i] == '\'')
             {
                 if (i > 0 && !quote_mode && str[i - 1] != '.' && !is_whitespace(str[i - 1]))
 					return false;
+                
                 if (quote_mode && cquote == str[i])
                 {
-					if ((i + 1 )< str.length() && str[i + 1] != '.' && !is_whitespace(str[i + 1]))
-						return false;
-					quote_mode == false;
-					if (!str_is_string(str.substr(str_begin, str_len)))
-						return false;
+					if (str[i - 1] != '\\' || (i > 2 && str[i - 2] == '\\'))
+					{
+						if ((i + 1 ) < str.length() && str[i + 1] != '.' && !is_whitespace(str[i + 1]))
+							return false;
+						quote_mode = false;
+						if (!str_is_string(str.substr(str_begin, str_len)))
+							return false;
+					}
                 }
-                else
+				else if (!quote_mode)
                 {
-                    quote_mode == true;
+                    quote_mode = true;
+					str_len = 1;
                     str_begin = i;
 					cquote = str[i];
                 }
             }
         }
-		if (str[str.length() - 1] == '.')
+		if (str[str.length() - 1] == '.' || quote_mode)
 			return false;
         return true;
     }
@@ -299,7 +402,7 @@ namespace TOML
     //utiles
 	// if the string contain only quote or double quotes return a default string
     // else return what is between
-    parse::type_string parse::check_empty_string(type_string str, int len)
+    parse::type_string parse::check_empty_string(type_string str, size_t len)
     {
         if (str.length() > len)
             str = str.substr(((len / 2)), str.length() - len);
@@ -454,7 +557,7 @@ namespace TOML
                 is_expo++;
             }
             nbr = str_base_to_int(str.substr(0, is_expo), 10);
-            //dividing to the original comma (what ?)
+            //dividing to the original comma
             float  ten = 1;
             if (dot > 0)
             {
@@ -479,6 +582,7 @@ namespace TOML
 		return nbr;
     }
 
+    // convert a string into a float depending of the base (yes there is int in the name but i use most of the time for integers)
 	float		parse::str_base_to_int(std::string str, size_t base)
 	{
 		float	nbr = 0;
@@ -501,6 +605,7 @@ namespace TOML
 		return nbr;
 	}
 
+    // interpret a char to a int
 	float		parse::char_to_int(char c)
 	{
 		if (c >= '0' && c <= '9')
