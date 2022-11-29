@@ -132,7 +132,6 @@ public:
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-        //std::cout << _buf  << std::endl;
         return requete;
     }
 
@@ -171,10 +170,7 @@ public:
                 if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ)
-                    {
-                        usleep(2000);
-                        requete = request_handler(i);
-                    }
+                    requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE)
                     response_handler(i, requete);
             }

@@ -118,13 +118,11 @@ std::string mime_parser()
 		s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
 		s << "Content-Type: " << mime_parser() << "\r\n\r\n"; // utiliser MINME ici 
 		_content = s.str();
-		//std::cout << _content << std::endl;
 		header_lenght = _content.size();
 		buffer << file.rdbuf();
 		this->_content += buffer.str();
 		file.close();
 		return send(ev_list[i].ident, _content.c_str(), _content.size() - header_lenght, 0);
-		//return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 		// send size of body not of all content;	
 	}
 
@@ -142,12 +140,12 @@ std::string mime_parser()
 		s << _version << " " << _status  << status_to_string(_status) << "\r\n"; 
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
-		std::cout << _content << std::endl;
 		header_lenght = _content.size();
 		s.clear();
 		buffer << file.rdbuf();
 		_content += buffer.str();
 		file.close();
+		std::cout << _content;
 		return send(ev_list[i].ident, _content.c_str(), _content.size() - header_lenght, 0);
 	}
 
