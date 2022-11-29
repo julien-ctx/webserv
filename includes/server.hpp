@@ -140,7 +140,6 @@ public:
     {
         int sent = false;
         Response rep(requete);
-        std::cout << "JE SUIS L URL ==   " << rep._uri._scheme << rep._uri._host << rep._uri._port <<  rep._uri._path << std::endl;
         if (requete._method == 0)
            sent = rep.methodGET(_ev_list, i);
         if (sent == -404)

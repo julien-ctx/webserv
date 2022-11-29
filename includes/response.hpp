@@ -138,9 +138,7 @@ std::string mime_parser()
 		header_lenght = _content.size();
 		this->_content += buffer.str();
 		file.close();
-		size_t envoi = send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
-		std::cout << "nbr octet envoie: " << envoi << std::endl;
-		return true;
+		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
 
 	bool send_404(struct kevent *ev_list , int i)
@@ -162,9 +160,7 @@ std::string mime_parser()
 		s.clear();
 		_content += buffer.str();
 		file.close();
-		size_t envoi = send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
-		std::cout << "nbr octet envoie: " << envoi << std::endl;
-		return true;
+		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
 
 };
