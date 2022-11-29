@@ -23,9 +23,9 @@ class Uri {
 
     public:
 
-Uri() {}
-Uri(std::string path) : _path(path) {}
-Uri(const Uri &u) : _path(u._path) , _scheme(u._scheme), _host(u._host), _port(u._port) {}
+Uri() : _scheme("http"), _host("localhost"), _port(4242) {}
+Uri(std::string path) :  _scheme("http"), _host("localhost"), _port(4242), _path(path) {}
+Uri(const Uri &u) : _scheme(u._scheme), _host(u._host), _port(u._port), _path(u._path) {}
 ~Uri() {}
 
 void SetPath(std::string path)
@@ -54,10 +54,10 @@ std::uint16_t GetPort()
 
 //    private:
 
-std::string     _path;
 std::string     _scheme;
 std::string     _host;
-std::uint16_t   _port; // size_t , uint16_t --> a voir 
+size_t          _port; // size_t , uint16_t --> a voir 
+std::string     _path;
 
 };
 

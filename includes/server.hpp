@@ -138,13 +138,15 @@ public:
     // Sends the response and sets the socket ready to read the request again
     void response_handler(int &i,  Request requete)
     {
-        bool sent = false;
+        int sent = false;
         Response rep(requete);
+        std::cout << "JE SUIS L URL ==   " << rep._uri._scheme << rep._uri._host << rep._uri._port <<  rep._uri._path << std::endl;
         if (requete._method == 0)
            sent = rep.methodGET(_ev_list, i);
-        if (sent)
+        if (sent == -404)
+            rep.send_404(_ev_list, i);
+        if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
-        usleep(10000);
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }

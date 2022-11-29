@@ -1,9 +1,24 @@
 #pragma once
 
+#include "mime.hpp"
 #include "utils.hpp"
 #include "server.hpp"
 #include "Uri.hpp"
 #include "request.hpp"
+
+long GetFileSize( std::ifstream & Fichier ) 
+{ 
+    // sauvegarder la position courante 
+    long pos = Fichier.tellg(); 
+    // se placer en fin de fichier 
+    Fichier.seekg( 0 , std::ios_base::end ); 
+    // récupérer la nouvelle position = la taille du fichier 
+    long size = Fichier.tellg() ; 
+    // restaurer la position initiale du fichier 
+    Fichier.seekg( pos,  std::ios_base::beg ) ;
+	Fichier.close(); 
+    return size ; 
+}
 
 std::string status_to_string(int status)
 {
@@ -26,7 +41,7 @@ std::string status_to_string(int status)
     else if (status == 401)
          return "Unauthorized";
     else if (status == 404)
-        return " Not Found";
+        return "Not Found";
     else if (status == 405 )
         return "Method Not Allowed";
     else if (status == 408 )
@@ -98,7 +113,7 @@ std::string mime_parser()
 		return size;
 	}
 
-	bool methodGET(struct kevent *ev_list , int i)
+	int methodGET(struct kevent *ev_list , int i)
 	{
 		std::stringstream	s;
 		size_t				header_lenght;
@@ -111,19 +126,21 @@ std::string mime_parser()
 		file.open("./www" + _uri._path);
 		if (!file)
 		{
-			file.close();
+			_status = 404;
 			return send_404(ev_list, i);
 		}
 		_status = 200;
+		buffer << file.rdbuf();
 		s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
-		s << "Content-Type: " << mime_parser() << "\r\n\r\n"; // utiliser MINME ici 
+		s << "Content-Length: " << GetFileSize(file) << "\r\n";
+		s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n"; // utiliser MINME ici 
 		_content = s.str();
 		header_lenght = _content.size();
-		buffer << file.rdbuf();
 		this->_content += buffer.str();
 		file.close();
-		return send(ev_list[i].ident, _content.c_str(), _content.size() - header_lenght, 0);
-		// send size of body not of all content;	
+		size_t envoi = send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
+		std::cout << "nbr octet envoie: " << envoi << std::endl;
+		return true;
 	}
 
 	bool send_404(struct kevent *ev_list , int i)
@@ -134,19 +151,20 @@ std::string mime_parser()
 		size_t				header_lenght;
 
 		file.open("./www/404.html");
-		_status = 404;
 		if (!file)
-			std::cout << RED << "Cannot respond with 404\n";
-		s << _version << " " << _status  << status_to_string(_status) << "\r\n"; 
+			std::cout << RED << "Cannot respond with 404\n" << RESET;
+		buffer << file.rdbuf();
+		s << _version << " " << _status << " " << status_to_string(_status) << "\r\n"; 
+		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
 		header_lenght = _content.size();
 		s.clear();
-		buffer << file.rdbuf();
 		_content += buffer.str();
 		file.close();
-		std::cout << _content;
-		return send(ev_list[i].ident, _content.c_str(), _content.size() - header_lenght, 0);
+		size_t envoi = send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
+		std::cout << "nbr octet envoie: " << envoi << std::endl;
+		return true;
 	}
 
 };
