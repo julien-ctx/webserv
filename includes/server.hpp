@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "response.hpp"
 #include "request.hpp"
+
 /* ----- Resources ----- */
 // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
 // https://man.openbsd.org/kqueue.2#:~:text=triggered%20the%20filter.-,RETURN%20VALUES,the%20value%20given%20by%20nevents%20.
@@ -161,6 +162,7 @@ public:
 
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        
         while (1)
         {
             kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);

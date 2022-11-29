@@ -116,7 +116,6 @@ std::string mime_parser()
 	int methodGET(struct kevent *ev_list , int i)
 	{
 		std::stringstream	s;
-		size_t				header_lenght;
 		std::ifstream 		file;
 		std::stringstream buffer;
 
@@ -135,7 +134,6 @@ std::string mime_parser()
 		s << "Content-Length: " << GetFileSize(file) << "\r\n";
 		s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n"; // utiliser MINME ici 
 		_content = s.str();
-		header_lenght = _content.size();
 		this->_content += buffer.str();
 		file.close();
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
@@ -146,7 +144,6 @@ std::string mime_parser()
 		std::ifstream 		file;
 		std::stringstream 	s;
 		std::stringstream buffer;
-		size_t				header_lenght;
 
 		file.open("./www/404.html");
 		if (!file)
@@ -156,7 +153,6 @@ std::string mime_parser()
 		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
-		header_lenght = _content.size();
 		s.clear();
 		_content += buffer.str();
 		file.close();
