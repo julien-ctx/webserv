@@ -25,10 +25,7 @@ namespace TOML
                         val.erase(0, 1);
                 }
                 else
-                {
-                    std::cout << "bruh ?" << std::endl;
                     val = check_empty_string(val, 2);
-                }
             }
             new_value = type_table(key, val);
         }
@@ -43,8 +40,6 @@ namespace TOML
                 t = T_float;
             new_value = type_table(key, TOML::parse::atof(val), t);
         }
-        else
-            throw TypeUndefined("Type undefined !");
         // to do ou don't bother ? to be continued... ==>
         // else if (str_is_date(val))
         // {
@@ -58,10 +53,18 @@ namespace TOML
         this->_hash_tables.push_back(new_value);
     }
 
+
+	void	parse::insert_table(type_string key, bool is_array)
+    {
+        type_table new_value(key, is_array);
+        new_value._parent = this->_here;
+        this->_hash_tables.push_back(new_value);
+    }
+
     //parse
 
     //  parse a line in a document
-	void	parse::parse_line(type_string &str, size_t line_nbr)
+	void	parse::parse_line(type_string str, size_t line_nbr)
     {
         // remove all whitespace in the begining and ending
         wspace_trimmer(0, str);
@@ -76,46 +79,54 @@ namespace TOML
                 break ;
             }
         }
+        // std::cout << "first" << std::endl;
         size_t  is_bracket = 0;
         if (str[0] == '[')
-            is_bracket == 1;
+            is_bracket = 1;
         if (is_bracket)
         {
 			if (str[str.length() - 1] != ']')
 				throw	ErrorParse("Expected ']' character", line_nbr);
             if (str[1] == '[')
+            {
 				is_bracket++;
+                if (str[str.length() - 2] != ']')
+                    throw	ErrorParse("Expected two ']' character", line_nbr);
+            }
 			this->_here = &_root;
-			for (size_t i = is_bracket + 1; i < str.length() )
-			{
-				if (is_bracket == 1)
-				{
-					i--;
-					while (is_whitespace(str[i]))
-						i--;
-					wspace_trimmer(i, str);
-					if (!str_is_table(str.substr(1, str.length() - 1)))
-						throw	ErrorParse("It is a wrong table statement", line_nbr);
-					if (&at_key_parent(str, this->_here) != NULL)
-						throw	ErrorParse("This table already exist", line_nbr);
-					insert_table(table_last_key(str), false);
-					return ;
-				}
-				// else
-				// {
-				// 	i--;
-				// 	while (is_whitespace(str[i]))
-				// 		i--;
-				// 	wspace_trimmer(i, str);
-				// 	if (!str_is_table(str.substr(1, str.length() - 1)))
-				// 		throw	ErrorParse("It is a wrong table statement", line_nbr);
-				// 	if (&at_key_parent(str, this->_here) != NULL)
-				// 		throw	ErrorParse("This table already exist", line_nbr);
-				// 	insert_table(table_last_key(str), false);
-				// 	return ;
-				// }
-			}
-				throw	ErrorParse("Expected ']' character", line_nbr);
+            size_t  i = str.length() - is_bracket - 1;
+            while (is_whitespace(str[i]))
+                    i--;
+            wspace_trimmer(i, str);
+            if (!str_is_table(str.substr(is_bracket, str.length() - is_bracket)))
+                throw	ErrorParse("It is a wrong table statement", line_nbr);
+            if (is_bracket == 1)
+                table_last_key(str, T_table, false, line_nbr);
+            else
+                table_last_key(str, T_table, true, line_nbr);
+        }
+        else
+        {
+            std::vector<type_string> key_value(str_split(str, type_string("=")));
+
+        // std::cout << "yolol" << std::endl;
+            if (key_value.size() != 2)
+				throw	ErrorParse("Not a correct line in TOML", line_nbr);
+
+            size_t  i = key_value[0].length() - 1;
+            while (is_whitespace(key_value[0][i]))
+                i--;
+            wspace_trimmer(i + 1, key_value[0]);
+            if (!str_is_table(key_value[0]))
+                throw	ErrorParse("It is a wrong table statement", line_nbr);
+            std::cout << "yolol = " << key_value[0] << std::endl;
+            type_string key(table_last_key(key_value[0], T_int, false, line_nbr));
+            if (!key_value[1].length())
+                throw	ErrorParse("No value", line_nbr);
+            wspace_trimmer(0, key_value[1]);
+            if (!str_is_nbr(key_value[1]) && !str_is_string(key_value[1]))
+                throw	TypeUndefined("Couldn't find a type that correspond for this value");
+            insert(key, key_value[1]);
         }
 
     }
@@ -190,6 +201,7 @@ namespace TOML
 					else
 						aslash_counter = 0;
 				}
+                // std::cout << "2th" << std::endl;
                 if (str[str.length() - 4] == '\\'  && str[str.length() - 5] != '\\')
                     return false;
             }
@@ -205,6 +217,7 @@ namespace TOML
 					if (count_quote >= 3)
 						return false;
 				}
+                // std::cout << "3th" << std::endl;
             }
             return true;
         }
@@ -222,9 +235,10 @@ namespace TOML
 					{
 						if (str.size() < 8 )
 							return false;
-						for(size_t j = i + 1; j < i + 5; j++)
+						for (size_t j = i + 1; j < i + 5; j++)
 							if (!is_hexa(str[j]))
 								return false;
+                        // std::cout << "5th" << std::endl;
 					}
 					if (str[i] == '\n')
 						return false;
@@ -233,6 +247,7 @@ namespace TOML
 					else
 						aslash_counter = 0;
 				}
+                // std::cout << "4th" << std::endl;
                 if (aslash_counter % 2 == 1)
                     return false;
             }
@@ -240,7 +255,8 @@ namespace TOML
             {
 				for (size_t i = 1; i < str.length() - 1; i++)
 					if (str[i] == '\n' || str[i] == '\'')
-                    return false;
+                        return false;
+                // std::cout << "6th" << std::endl;
             }
             return true;
         }
@@ -283,6 +299,7 @@ namespace TOML
 			else if (is_hexa(str[i]))
                 count_nbr++;
         }
+                // std::cout << "7th" << std::endl;
         if (!is_hexa(str[str.length() - 1]))
             return false;
         return true;
@@ -315,6 +332,7 @@ namespace TOML
                     exponent = true;
             }
         }
+                // std::cout << "8th" << std::endl;
         return true;
     }
 
@@ -342,7 +360,7 @@ namespace TOML
         {
 			if (quote_mode)
 				str_len++;
-            if (i == 0 && str[i] == '.')
+            if (str[i] == '.' && !was_space)
                 return false;
             if ((!valid_key_char(str[i]) && !quote_mode)
 				||	(i > 0 && !quote_mode && was_space && valid_key_char(str[i]) && !is_whitespace(str[i]) && str[i] != '.' && is_whitespace(str[i - 1])))
@@ -356,7 +374,6 @@ namespace TOML
             {
                 if (i > 0 && !quote_mode && str[i - 1] != '.' && !is_whitespace(str[i - 1]))
 					return false;
-                
                 if (quote_mode && cquote == str[i])
                 {
 					if (str[i - 1] != '\\' || (i > 2 && str[i - 2] == '\\'))
@@ -377,6 +394,7 @@ namespace TOML
                 }
             }
         }
+        // std::cout << "9th" << std::endl;
 		if (str[str.length() - 1] == '.' || quote_mode)
 			return false;
         return true;
@@ -387,6 +405,7 @@ namespace TOML
         for (size_t i = 0; i < str.length(); i++)
             if (str[i] != '0' && str[i] != '1')
                 return false;
+        // std::cout << "10th" << std::endl;
         return true;
     }
 
@@ -395,11 +414,144 @@ namespace TOML
         for (size_t i = 0; i < str.length(); i++)
             if (str[i] < '0' || str[i] > '7')
                 return false;
+        // std::cout << "11th" << std::endl;
         return true;
+    }
+
+    //searching
+    //  return a pointer of value base on is key and parent
+	parse::pointer	parse::at_key_parent(type_string key, pointer parent)
+    {
+        iterator    it(this->begin());
+
+        while (it != this->end())
+        {
+
+            // std::cout << "slam " << it->_key << " jam  " << key << std::endl;
+            // std::cout << "anagram " << it->_parent << " anam  " << parent << " Palouf " << this->_here << std::endl;
+            if (!key.compare(it->_key) && it->_parent == parent)
+            {
+                return it.base();
+            }
+            // std::cout << "poulet" << key << std::endl;
+            it++;
+        }
+        return NULL;
     }
 
 
     //utiles
+    // 
+	parse::type_string	parse::table_last_key(type_string str, TOML::types t, bool is_array, size_t line_nbr)
+    {
+        std::vector<type_string> tables(str_split(str, type_string(".")));
+        pointer				original;
+        type_string         convert;
+        type_string         ret;
+        for (size_t i = 0; i < tables.size(); i++)
+        {
+            if (str_is_string(tables[i]))
+            {
+                tables[i].erase(0, 1);
+                tables[i].erase(tables[i].size() - 1, 1);
+            }
+            original = at_key_parent(tables[i], this->_here);
+            if (i < tables.size() - 1)
+            {
+                if (original != NULL && original->_typing != T_table)
+                    throw ErrorParse("Value already exist in this table", line_nbr);
+                if (original == NULL)
+                    insert_table(tables[i], false);
+                original = at_key_parent(tables[i], this->_here);
+                // if (original == NULL)
+                    // std::cout << "cringe " << i << std::endl;
+                if (!original->_is_array_table)
+                {
+                    // std::cout << "dunk " << i << std::endl;
+                    this->_here = original;
+                }
+                else
+                {
+                    convert = type_string(1, static_cast<char>((original->_array.size() - 1) + 48));
+                    this->_here = at_key_parent(convert, original);
+                }
+            }
+            else
+            {
+                if (original != NULL)
+                {
+                    if (original->_typing != T_table || !is_array)
+                        throw ErrorParse("Value already exist in this table", line_nbr);
+                    this->_here = at_key_parent(tables[i], this->_here);
+                    convert = type_string(1, static_cast<char>((this->_here->_array.size()) + 48));
+                    insert_table(convert, false);
+                    original = at_key_parent(convert, this->_here);
+                    this->_here->_array.push_back(*original);
+                    this->_here = at_key_parent(convert, this->_here);
+                }
+                else
+                {
+                    if (t == T_table)
+                    {
+                        insert_table(tables[i], is_array);
+                        original = at_key_parent(tables[i], this->_here);
+                        this->_here = original;
+                    }
+                    if (is_array)
+                    {
+                        convert = type_string("0");
+                        insert_table(convert, false);
+                        original = at_key_parent(convert, this->_here);
+                        this->_here->_array.push_back(*original);
+                        this->_here = at_key_parent(convert, this->_here);
+                    }
+
+                }
+                ret = tables[i];
+            }
+        }
+            std::cout << "mam = " << ret << std::endl;
+        // std::cout << "12th" << std::endl;
+        return ret;
+    }
+
+    // a str split splecial to TOML parsing
+	std::vector<parse::type_string>	parse::str_split(type_string str, type_string ocu)
+    {
+        std::vector<type_string> vec;
+        size_t  begin = 0;
+        size_t  len = 0;
+        bool    quote_mode = false;
+
+        
+        std::cout << "coupe = " << str << std::endl;
+        for (size_t i = 0; i < str.length(); i++ )
+        {
+            if (quote_mode)
+            {
+                if (str[i] == '\'' || str[i] == '"')
+                    quote_mode = false;
+            }
+            else
+            {
+                if (!ocu.compare(str.substr(i, ocu.length())))
+                {
+                    vec.push_back(str.substr(begin, len));
+                    i += ocu.length();
+                    begin = i;
+                    len = 0;
+                }
+                if (str[i] == '\'' || str[i] == '"')
+                    quote_mode = true;
+            }
+            len++;
+        }
+        std::cout << "e " << str.substr(begin, len) << std::endl;
+        vec.push_back(str.substr(begin, len));
+
+        // std::cout << "13th" << std::endl;
+        return vec;
+    }
 	// if the string contain only quote or double quotes return a default string
     // else return what is between
     parse::type_string parse::check_empty_string(type_string str, size_t len)

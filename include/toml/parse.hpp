@@ -60,7 +60,8 @@ namespace TOML
 		void	insert_table(type_string key, bool is_array);
 		//parse
 		void	begin_parse(void);
-		void	parse_line(type_string &str);
+		// remttre le & a str?
+		void	parse_line(type_string str, size_t line_nbr);
 		bool	is_hexa(char c);
 		bool	is_lower(char c);
 		bool	is_upper(char c);
@@ -77,23 +78,27 @@ namespace TOML
 		bool	str_is_table(type_string str);
 		bool	only_binary(type_string str);
 		bool	only_octal(type_string str);
-		//utiles
-		type_string	table_last_key(type_string str);
-		type_string	check_empty_string(type_string str, size_t len);
-		type_string	double_quote_change_string(type_string str);
-		bool		unicode_interpreter(size_t pos, type_string &str);
-        void		wspace_trimmer(size_t pos, type_string &str);
-		float		atof(type_string str);
-		float		str_base_to_int(type_string str, size_t base);
-		float		char_to_int(char c);
-
 		//searching
-		TOML::value	at_key_parent(type_string key, pointer parent);
+		pointer		at_key_parent(type_string key, pointer parent);
 		type_array	by_table(pointer parent);
 		type_array	by_key(type_string key);
 
+		//utiles
+		type_string					table_last_key(type_string str, TOML::types t, bool is_array, size_t line_nbr);
+		std::vector<type_string>	str_split(type_string str, type_string ocu);
+		type_string					check_empty_string(type_string str, size_t len);
+		type_string					double_quote_change_string(type_string str);
+		bool						unicode_interpreter(size_t pos, type_string &str);
+        void						wspace_trimmer(size_t pos, type_string &str);
+		float						atof(type_string str);
+		float						str_base_to_int(type_string str, size_t base);
+		float						char_to_int(char c);
+
+
 
     };
+
+
 
 }
 
