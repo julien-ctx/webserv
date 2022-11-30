@@ -32,6 +32,8 @@
 
 void exit_error (std::string str);
 
+extern char **environ;
+
 enum HttpMethod {
     GET,    // 0
     POST,   // 1

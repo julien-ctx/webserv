@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "response.hpp"
 #include "request.hpp"
+#include "cgi.hpp"
 
 /* ----- Resources ----- */
 // https://rderik.com/blog/using-kernel-queues-kqueue-notifications-in-swift/
@@ -131,7 +132,7 @@ public:
 
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-        if (ret <= 0)
+        if (ret < 0)
             exit_error("recv function failed");
         else
             this->_buf[ret] = 0;
@@ -145,15 +146,24 @@ public:
     void response_handler(int &i, Request requete)
     {
         int sent = false;
+        CGI cgi(requete.GetUri().GetPath());
         Response rep(requete);
-        if (requete._method == 0)
-           sent = rep.methodGET(_ev_list, i);
-        if (sent == -404)
-            rep.send_404(_ev_list, i);
+        if (cgi.isCGI(requete))
+            sent = cgi.execute(this->_ev_list[i].ident);
+        else
+        {
+            if (requete._method == 0)
+            sent = rep.methodGET(_ev_list, i);
+            if (sent < 0)
+            {
+                if (sent == -404)
+                    rep.send_404(_ev_list, i);
+                else
+                    exit_error("send function failed");
+            }
+        }
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
-        if (sent < 0)
-            exit_error("send function failed");
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
 

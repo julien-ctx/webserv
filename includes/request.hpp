@@ -3,10 +3,6 @@
 #include "Uri.hpp"
 #include "utils.hpp"
 
-
-
-
-
 std::string DelWhiteSpace(std::string str)
 {
     for (size_t i = 0; i < str.length(); i++)
@@ -31,14 +27,9 @@ else
     throw std::invalid_argument("Unexpected HTTP method");
 }
 
-
-
-
-
 // A Request object represents a single HTTP request
 // It have method n URI(url) so that the server can identify
 // the corresponding resource and action
-
 
 class Request
 {
@@ -145,15 +136,11 @@ void string_to_request(const std::string& request_string)
     SetBody(message_body);
 }
 
-
-// private:
-
 std::map<std::string, std::string>  _headers;
 std::string                         _version;
 std::string                         _body;
 
 int _method;
 Uri _uri;
-
 
 };
