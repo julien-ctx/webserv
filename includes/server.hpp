@@ -154,7 +154,6 @@ public:
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         if (sent < 0)
             exit_error("send function failed");
-        delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
 
@@ -177,7 +176,9 @@ public:
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
+                if (this->_ev_list[i].ident & EV_EOF)
+                    delete_client(this->_ev_list[i].ident);
+                else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ)
                     requete = request_handler(i);
