@@ -81,6 +81,7 @@ public:
 			if (execve(cmd[0], cmd, environ) < 0)
 				exit_error("Invalid CGI program");
 		}
+		waitpid(0, NULL, 0);
 		char buf[2];
 		std::memset(buf, 0, 1);
 		close(fds[1]);
