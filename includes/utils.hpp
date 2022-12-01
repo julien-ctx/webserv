@@ -16,9 +16,9 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <vector>
+#include <map>
 
 #define BUFFER_SIZE 30000
-#define MAX_MSG_SIZE 1024
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */
@@ -31,3 +31,18 @@
 #define WHITE   "\033[1m\033[37m"      /* Bold White */
 
 void exit_error (std::string str);
+
+extern char **environ;
+
+enum HttpMethod {
+    GET,    // 0
+    POST,   // 1
+    DELETE, // 2
+};
+
+enum HttpStatusCode {
+    OK = 200,
+    BadRequest = 400,
+    InternalServerError = 500,
+};
+

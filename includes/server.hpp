@@ -2,6 +2,7 @@
 
 #include "utils.hpp"
 #include "response.hpp"
+#include "request.hpp"
 #include "cgi.hpp"
 
 /* ----- Resources ----- */
@@ -10,6 +11,8 @@
 // https://www.freebsd.org/cgi/man.cgi?query=kevent&sektion=2&n=1
 // https://www.garshol.priv.no/download/text/http-tut.html
 /* --------------------- */
+
+// data de kevent retourne le nb d'octet a recevoir pour POST !
 
 class Server
 {
@@ -123,33 +126,51 @@ public:
     }
 
     // Receives request and sets the client ready to send the response
-    void request_handler(int &i)
+    Request request_handler(int &i)
     {
-        recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-        std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+        Request requete;
+
+        std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
+        int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+        if (ret < 0)
+            exit_error("recv function failed");
+        else
+            this->_buf[ret] = 0;
+        requete.string_to_request(_buf);
+        std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+        return requete;
     }
 
     // Sends the response and sets the socket ready to read the request again
-    void response_handler(int &i, Response &resp)
+    void response_handler(int &i, Request requete)
     {
-        bool sent = false;
-
-        if (std::string(this->_buf).find("html") != std::string::npos)
-            CGI cgi("clock.pl");
-            // sent = send(this->_ev_list[i].ident, resp.getIndex("./www/cgi.html").c_str(), resp.getDataSize(), 0);
-        else if (std::string(this->_buf).find("css") != std::string::npos)
-            sent = send(this->_ev_list[i].ident, resp.getCSS("./www/style.css").c_str(), resp.getDataSize(), 0);
-        else if (std::string(this->_buf).find("favicon") != std::string::npos)
-            sent = send(this->_ev_list[i].ident, resp.getFav("./www/favicon.ico").c_str(), resp.getDataSize(), 0);
-        if (sent)
-            std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+        int sent = false;
+        CGI cgi(requete.GetUri().GetPath());
+        Response rep(requete);
+        if (cgi.isCGI(requete))
+            sent = cgi.execute(this->_ev_list[i].ident);
+        else
+        {
+            if (requete._method == 0)
+            sent = rep.methodGET(_ev_list, i);
+            if (sent < 0)
+            {
+                if (sent == -404)
+                    rep.send_404(_ev_list, i);
+                else
+                    exit_error("send function failed");
+            }
+        }
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        if (sent > 0)
+            std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
     }
 
-    void launch(Response &resp)
+    void launch()
     {
+        Request requete;
         if ((this->_kq = kqueue()) < 0)
         {
             close(this->_fd);
@@ -158,19 +179,23 @@ public:
 
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+        
         while (1)
         {
-            kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             // Waits for an event to occur and return number of events catched
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
+                if (this->_ev_list[i].ident & EV_EOF)
+                    delete_client(this->_ev_list[i].ident);
+                else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ)
-                    request_handler(i);
+                    requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE)
-                    response_handler(i, resp);
+                    response_handler(i, requete);
+                kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
         }
     }
