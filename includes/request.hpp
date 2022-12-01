@@ -94,6 +94,7 @@ void string_to_request(const std::string& request_string)
     Uri                 uri;
     size_t              lpos = 0, rpos = 0;
 
+    usleep(2000);
     rpos = request_string.find("\r\n", lpos);
     if (rpos == std::string::npos) // npos --> means "until the end of the string"
         throw std::invalid_argument("Could not find request start line"); // aucun \r\n --> sus
@@ -133,7 +134,7 @@ void string_to_request(const std::string& request_string)
         value = DelWhiteSpace(value);
         SetHeader(key, value);
     }
-    SetBody(message_body);
+    SetBody(message_body); 
 }
 
 std::map<std::string, std::string>  _headers;

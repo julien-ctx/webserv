@@ -6,17 +6,17 @@
 #include "Uri.hpp"
 #include "request.hpp"
 
-long GetFileSize( std::ifstream & Fichier ) 
+long GetFileSize( std::ifstream & file ) 
 { 
     // sauvegarder la position courante 
-    long pos = Fichier.tellg(); 
+    long pos = file.tellg(); 
     // se placer en fin de fichier 
-    Fichier.seekg( 0 , std::ios_base::end ); 
+    file.seekg( 0 , std::ios_base::end ); 
     // récupérer la nouvelle position = la taille du fichier 
-    long size = Fichier.tellg() ; 
+    long size = file.tellg() ; 
     // restaurer la position initiale du fichier 
-    Fichier.seekg( pos,  std::ios_base::beg ) ;
-	Fichier.close(); 
+    file.seekg( pos,  std::ios_base::beg ) ;
+	file.close();
     return size ; 
 }
 

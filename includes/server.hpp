@@ -26,7 +26,6 @@ private:
     struct kevent _ev_set;
     struct kevent _ev_list[SOMAXCONN];
     socklen_t _socklen;
-
     int _clients[SOMAXCONN];
 
 public:
@@ -139,6 +138,7 @@ public:
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+
         return requete;
     }
 
@@ -178,7 +178,7 @@ public:
 
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-        
+
         while (1)
         {
             kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
@@ -191,9 +191,11 @@ public:
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ)
+                {
                     requete = request_handler(i);
-                else if (this->_ev_list[i].filter == EVFILT_WRITE)
                     response_handler(i, requete);
+                }
+                //else if (this->_ev_list[i].filter == EVFILT_WRITE)
             }
         }
     }
