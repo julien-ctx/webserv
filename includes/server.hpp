@@ -181,6 +181,7 @@ public:
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
         
+        bool rq = false;
         while (1)
         {
             // Waits for an event to occur and return number of events catched
@@ -191,10 +192,16 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].filter == EVFILT_READ)
+                else if (this->_ev_list[i].filter == EVFILT_READ && !rq)
+                {
                     requete = request_handler(i);
-                else if (this->_ev_list[i].filter == EVFILT_WRITE)
+                    rq = true;
+                }
+                else if (this->_ev_list[i].filter == EVFILT_WRITE && rq)
+                {
                     response_handler(i, requete);
+                    rq = false;
+                }
                 kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
         }
