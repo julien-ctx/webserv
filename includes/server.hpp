@@ -101,6 +101,12 @@ public:
 
     void listener()
     {
+        if ((this->_kq = kqueue()) < 0)
+        {
+            close(this->_fd);
+            exit_error("kqueue function failed");
+        }
+
         std::cout << BLUE << "[SERVER] " << "localhost:" + std::to_string(this->_port) << std::endl << RESET;
         // Listens on server fd, with a 128 (SOMAXCONN) pending connexion maximum
         if (listen(this->_fd, SOMAXCONN) < 0)
@@ -132,13 +138,13 @@ public:
 
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         if (ret < 0)
             exit_error("recv function failed");
         else
             this->_buf[ret] = 0;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;
     }
 
@@ -162,20 +168,15 @@ public:
                     exit_error("send function failed");
             }
         }
-        delete_client(this->_ev_list[i].ident);
-        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        delete_client(this->_ev_list[i].ident);
     }
 
     void launch()
     {
         Request requete;
-        if ((this->_kq = kqueue()) < 0)
-        {
-            close(this->_fd);
-            exit_error("kqueue function failed");
-        }
 
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);

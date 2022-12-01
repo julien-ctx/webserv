@@ -96,7 +96,7 @@ void string_to_request(const std::string& request_string)
 
     rpos = request_string.find("\r\n", lpos);
     if (rpos == std::string::npos) // npos --> means "until the end of the string"
-        throw std::invalid_argument("Could not find request start line"); // aucun \r\n --> sus
+        return;
 
     start_line = request_string.substr(0, rpos);  // si bug essayer substr(lpos, rpos - lpos) mais lpos = 0 ici
     lpos = rpos + 2; // +1 pour \r +1 pour \n --> +2
