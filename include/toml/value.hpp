@@ -20,7 +20,7 @@ namespace   TOML
         typedef float					 type_float;
         typedef bool					 type_bool;
         typedef std::string				 type_string;
-        typedef std::vector<TOML::value> type_array;
+        typedef std::vector<TOML::value*> type_array;
         typedef std::tm					 type_date_time;
 
 		
@@ -62,6 +62,30 @@ namespace   TOML
 		value(type_string key, type_date_time dt) : _typing(T_date_time), _key(key), _date_time(dt) {}
 		// construct from a table
 		value(type_string key, bool is_array) : _typing(T_table), _key(key), _is_array_table(is_array), _array() {}
+		// construct from a a copy
+		value(const TOML::value &copy)
+		{
+			this->_key = copy._key;
+			this->_typing = copy._typing;
+			this->_parent = copy._parent;
+			if (copy._typing == T_string)
+				this->_string = copy._string;
+			else if (copy._typing == T_float)
+				this->_float = copy._float;
+			else if (copy._typing == T_int)
+				this->_int = copy._int;
+			else if (copy._typing == T_bool)
+				this->_bool = copy._bool;
+			else if (copy._typing == T_date_time)
+				this->_date_time = copy._date_time;
+			else if (copy._typing == T_array)
+				this->_array = copy._array;
+			else if (copy._typing == T_table)
+			{
+				this->_array = copy._array;
+				this->_is_array_table = copy._is_array_table;
+			}
+		}
 
 		~value() {}
 

@@ -6,7 +6,7 @@ namespace TOML
     // interprete and change the string val, so it can be include in the _hash_tables
     void	parse::insert(type_string key, type_string val)
     {
-        type_table new_value;
+        type_table *new_value;
         if (str_is_string(val))
         {
             if (val[0] == '"')
@@ -27,7 +27,7 @@ namespace TOML
                 else
                     val = check_empty_string(val, 2);
             }
-            new_value = type_table(key, val);
+            new_value = new type_table(key, val);
         }
         else if (str_is_nbr(val))
         {
@@ -38,8 +38,12 @@ namespace TOML
                 t = T_int;
             else
                 t = T_float;
-            new_value = type_table(key, TOML::parse::atof(val), t);
+            new_value = new type_table(key, TOML::parse::atof(val), t);
         }
+		else
+		{
+            new_value = new type_table(key, false);
+		}
         // to do ou don't bother ? to be continued... ==>
         // else if (str_is_date(val))
         // {
@@ -49,16 +53,19 @@ namespace TOML
         // {
             
         // }
-        new_value._parent = this->_here;
+        new_value->_parent = this->_here;
         this->_hash_tables.push_back(new_value);
     }
 
 
 	void	parse::insert_table(type_string key, bool is_array)
     {
-        type_table new_value(key, is_array);
-        new_value._parent = this->_here;
+		type_table *new_value;
+        new_value = new type_table(key, is_array);
+        new_value->_parent = this->_here;
+        // std::cout << "key = " << key << " parent key = "<< this->_here->_key << std::endl;
         this->_hash_tables.push_back(new_value);
+        // std::cout << "awesome : " << this->_hash_tables[0]->_key  << " ftg" <<  this->_hash_tables[0]->_parent<< std::endl;
     }
 
     //parse
@@ -98,12 +105,19 @@ namespace TOML
             while (is_whitespace(str[i]))
                     i--;
             wspace_trimmer(i, str);
-            if (!str_is_table(str.substr(is_bracket, str.length() - is_bracket)))
+            if (!str_is_table(str.substr(is_bracket, str.length() - (is_bracket * 2))))
+            {
+            // std::cout << "tg fdp" << std::endl;
                 throw	ErrorParse("It is a wrong table statement", line_nbr);
+            }
             if (is_bracket == 1)
-                table_last_key(str, T_table, false, line_nbr);
+            {
+                table_last_key(str.substr(1, str.length() - 2), T_table, false, line_nbr);
+            }
             else
-                table_last_key(str, T_table, true, line_nbr);
+            {
+                table_last_key(str.substr(2, str.length() - 4), T_table, true, line_nbr);
+            }
         }
         else
         {
@@ -119,7 +133,7 @@ namespace TOML
             wspace_trimmer(i + 1, key_value[0]);
             if (!str_is_table(key_value[0]))
                 throw	ErrorParse("It is a wrong table statement", line_nbr);
-            std::cout << "yolol = " << key_value[0] << std::endl;
+            // std::cout << "yolol = " << key_value[0] << std::endl;
             type_string key(table_last_key(key_value[0], T_int, false, line_nbr));
             if (!key_value[1].length())
                 throw	ErrorParse("No value", line_nbr);
@@ -422,22 +436,55 @@ namespace TOML
     //  return a pointer of value base on is key and parent
 	parse::pointer	parse::at_key_parent(type_string key, pointer parent)
     {
-        iterator    it(this->begin());
 
-        while (it != this->end())
-        {
-
-            // std::cout << "slam " << it->_key << " jam  " << key << std::endl;
-            // std::cout << "anagram " << it->_parent << " anam  " << parent << " Palouf " << this->_here << std::endl;
-            if (!key.compare(it->_key) && it->_parent == parent)
+		for (size_t i = 0; i < this->_hash_tables.size(); i++)
+		{
+            	// std::cout << "Tony glaire : " << this->_hash_tables[i]->_key  << " ftg" <<  this->_hash_tables[i]->_parent<< std::endl;
+			if (!key.compare(this->_hash_tables[i]->_key) && this->_hash_tables[i]->_parent == parent)
             {
-                return it.base();
+                return this->_hash_tables[i];
             }
-            // std::cout << "poulet" << key << std::endl;
-            it++;
-        }
+		}
+		
+		
+        // while (it != this->end())
+        // {
+        //     // std::cout << "key " << key << " persona " << this->_here->_key << std::endl;
+
+        //     // std::cout << "slam " << it->_key << " jam  " << key << std::endl;
+        //     std::cout << "Tony glaire : " << (*it.base())->_key  << " ftg" <<  (*it.base())->_parent<< std::endl;
+        //     if (!key.compare((*it.base())->_key) && (*it.base())->_parent == parent)
+        //     {
+        //         return *it.base();
+        //     }
+        //     // std::cout << "poulet" << key << std::endl;
+        //     it++;
+        // }
         return NULL;
     }
+	// 
+
+	value::type_array	parse::by_key(type_string key)
+	{
+		value::type_array	ar;
+		for (size_t i = 0; i < this->_hash_tables.size(); i++)
+		{
+			if (this->_hash_tables[i]->_key == key)
+				ar.push_back(this->_hash_tables[i]);
+		}
+		return ar;
+	}
+
+	value::type_array	parse::by_table(pointer parent)
+	{
+		value::type_array	ar;
+		for (size_t i = 0; i < this->_hash_tables.size(); i++)
+		{
+			if (this->_hash_tables[i]->_parent == parent)
+				ar.push_back(this->_hash_tables[i]);
+		}
+		return ar;
+	}
 
 
     //utiles
@@ -448,6 +495,11 @@ namespace TOML
         pointer				original;
         type_string         convert;
         type_string         ret;
+        pointer             prev_here;
+        pointer             to_add;
+		type_table			new_one(type_string("0"), false);
+
+
         for (size_t i = 0; i < tables.size(); i++)
         {
             if (str_is_string(tables[i]))
@@ -482,11 +534,13 @@ namespace TOML
                 {
                     if (original->_typing != T_table || !is_array)
                         throw ErrorParse("Value already exist in this table", line_nbr);
+                    prev_here = this->_here;
                     this->_here = at_key_parent(tables[i], this->_here);
-                    convert = type_string(1, static_cast<char>((this->_here->_array.size()) + 48));
+                    convert = std::to_string(this->_here->_array.size());
                     insert_table(convert, false);
                     original = at_key_parent(convert, this->_here);
-                    this->_here->_array.push_back(*original);
+                    to_add = at_key_parent( tables[i], prev_here);
+                    to_add->_array.push_back(original);
                     this->_here = at_key_parent(convert, this->_here);
                 }
                 else
@@ -494,23 +548,34 @@ namespace TOML
                     if (t == T_table)
                     {
                         insert_table(tables[i], is_array);
+        				// std::cout << "Tony glaire : " << this->_hash_tables[0]->_key  << " ftg" <<  this->_hash_tables[0]->_parent<< std::endl;
                         original = at_key_parent(tables[i], this->_here);
+                        // std::cout << original << std::endl;
+                        prev_here = this->_here;
                         this->_here = original;
                     }
                     if (is_array)
                     {
                         convert = type_string("0");
-                        insert_table(convert, false);
-                        original = at_key_parent(convert, this->_here);
-                        this->_here->_array.push_back(*original);
-                        this->_here = at_key_parent(convert, this->_here);
+                        // std::cout << "AAAAAAAAAAAA " <<this->_here->_key  << std::endl;
+                        // insert_table(convert, false);
+                        // std::cout << this->_here->_key<< this->_here  << std::endl;
+                        // original = at_key_parent(convert, this->_here);
+                        to_add = at_key_parent(tables[i], prev_here);
+                        // std::cout << "AAAAAAAAAAAA " <<this->_here->_key  << std::endl;
+                        to_add->_array.push_back(&new_one);
+                        this->_hash_tables.push_back(&new_one);
+						this->_hash_tables[this->_hash_tables.size() - 1]->_parent = this->_here;
+                        // std::cout << "AAAAAAAAAAAA " <<this->_hash_tables[this->_hash_tables.size() - 1]._key  << std::endl;
+                        original->_parent = to_add;
+                        this->_here = original;
+                        // std::cout << "reeeeeet " << &this->_hash_tables[this->_hash_tables.size() - 1]  << std::endl;
                     }
-
                 }
                 ret = tables[i];
             }
         }
-            std::cout << "mam = " << ret << std::endl;
+            // std::cout << "mam = " << ret << std::endl;
         // std::cout << "12th" << std::endl;
         return ret;
     }
@@ -524,7 +589,7 @@ namespace TOML
         bool    quote_mode = false;
 
         
-        std::cout << "coupe = " << str << std::endl;
+        // std::cout << "coupe = " << str << std::endl;
         for (size_t i = 0; i < str.length(); i++ )
         {
             if (quote_mode)
@@ -546,7 +611,7 @@ namespace TOML
             }
             len++;
         }
-        std::cout << "e " << str.substr(begin, len) << std::endl;
+        // std::cout << "e " << str.substr(begin, len) << std::endl;
         vec.push_back(str.substr(begin, len));
 
         // std::cout << "13th" << std::endl;
@@ -768,5 +833,17 @@ namespace TOML
 			return static_cast<float>(c - 55);
 		return 0;
 	}
+
+	// child
+	// void	parse::child_correct_parent(type_string parent_key)
+	// {
+	// 	iterator    it(this->begin());
+	// }
+
+	parse::type_table	parse::new_table(type_string key, bool	has_array)
+	{
+		return (type_table(key, has_array));
+	}
+
 
 }

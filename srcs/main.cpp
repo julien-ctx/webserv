@@ -30,6 +30,17 @@ class a
 
 std::ostream& operator<< (std::ostream& o, TOML::value& val)
 {
+	if (val._typing == TOML::T_table)
+		o << "\033[0;31m" << std::endl;
+	if (val._typing == TOML::T_int)
+		o << "\033[0;32m" << std::endl;
+	if (val._typing == TOML::T_float)
+		o << "\033[0;33m" << std::endl;
+	if (val._typing == TOML::T_bool)
+		o << "\033[0;34m" << std::endl;
+	if (val._typing == TOML::T_string)
+		o << "\033[0;36m" << std::endl;
+		std::cout << "e" << std::endl;
 	o << "Key = " << val._key;
 	if (val._typing != TOML::T_table)
 	{
@@ -50,8 +61,15 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 		if (!val._is_array_table)
 			o << "not " ;
 		o << "an array" << std::endl;
+		if (val._is_array_table)
+		{
+			for(size_t i = 0;i <val._array.size() ;i++)
+			{
+				o << "child = " << val._array[i]->_key << std::endl;
+			}
+		}
 	}
-	o << "key parent = " << val._parent->_key << std::endl;
+	o << "key parent = " << val._parent->_key << " coord = " << &val << "\033[0m" << std::endl;
 	return (o);
 }
 
@@ -79,7 +97,7 @@ int main(int ac, char **av)
     }
 	for (size_t i = 0; i < yo._hash_tables.size(); i++)
 	{
-		std::cout << yo._hash_tables[i];
+		std::cout << *yo._hash_tables[i];
 	}
 	
 	return 0;

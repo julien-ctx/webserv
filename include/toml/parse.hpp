@@ -20,7 +20,7 @@ namespace TOML
         typedef float							type_float;
         typedef bool							type_bool;
         typedef std::string						type_string;
-        typedef std::vector<type_table>			type_array;
+        typedef std::vector<type_table*>		type_array;
         typedef std::tm							type_date_time;
 
 		typedef std::vector<type_table>::allocator_type	Allocator;
@@ -79,9 +79,9 @@ namespace TOML
 		bool	only_binary(type_string str);
 		bool	only_octal(type_string str);
 		//searching
-		pointer		at_key_parent(type_string key, pointer parent);
-		type_array	by_table(pointer parent);
-		type_array	by_key(type_string key);
+		pointer				at_key_parent(type_string key, pointer parent);
+		value::type_array	by_table(pointer parent);
+		value::type_array	by_key(type_string key);
 
 		//utiles
 		type_string					table_last_key(type_string str, TOML::types t, bool is_array, size_t line_nbr);
@@ -93,6 +93,8 @@ namespace TOML
 		float						atof(type_string str);
 		float						str_base_to_int(type_string str, size_t base);
 		float						char_to_int(char c);
+		void						child_correct_parent(value::type_array to_change, value::type_array changer);
+		type_table					new_table(type_string key, bool	has_array);
 
 
 
