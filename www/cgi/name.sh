@@ -14,7 +14,7 @@ echo "<h1>You are $USER!</h1>"
 
 echo '<div class="center">
 <a href="/">
-	<button>Home</button>
+	<button class="home-button">Home</button>
 </a>
 </div>
 <footer>

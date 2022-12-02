@@ -19,7 +19,7 @@ my $html = '<!DOCTYPE html>
 <h2>' . "$date" . '</h2>
 <div class="center">
 <a href="/">
-	<button>Home</button>
+	<button class="home-button">Home</button>
 </a>
 </div>
 <footer>

@@ -15,7 +15,7 @@ if __name__ == "__main__":
 	<h1>42</h1>
 	<div class="center">
 	<a href="/">
-		<button>Home</button>
+		<button class="home-button">Home</button>
 	</a>
 	</div>
 	<footer>

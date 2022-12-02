@@ -1,13 +1,129 @@
 #pragma once
 
+#include <stdlib.h>
+#include <ctype.h>
 #include "Uri.hpp"
 #include "utils.hpp"
+#include <string.h>
+
+std::string ltrim(const std::string &s) {
+    size_t start = s.find_first_not_of(" \n\r\t\f\v"); // trouve le premier char qui n'est pas dans la string
+    return (start == std::string::npos) ? "" : s.substr(start);
+}
+
+std::string rtrim(const std::string &s) {
+    size_t end = s.find_last_not_of(" \n\r\t\f\v"); // trouve dernier char qui n'est pas contenue dans cette string;
+    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
+}
+
+std::string trim(const std::string & s) {
+	return rtrim(ltrim(s)); // del whitespace 
+}
+
+static char	**ft_malloc_error(char **tab)
+{
+	unsigned int	i;
+
+	i = 0;
+	while (tab[i])
+	{
+		free(tab[i]);
+		i++;
+	}
+	free(tab);
+	return (NULL);
+}
+
+static int	ft_count_line_tab(char const *s, char c)
+{
+	int	i;
+	int	secu;
+	int	count;
+
+	i = 0;
+	secu = 0;
+	count = 0;
+	while ((size_t)i < strlen(s))
+	{
+		if (s[i] == c)
+			secu = 0;
+		else if (!secu)
+		{
+			secu = 1;
+			count++;
+		}
+		i++;
+	}
+	return (count);
+}
+
+static void	ft_get_next_str(char **next_str, unsigned int *next_str_len, char c)
+{
+	unsigned int	i;
+
+	*next_str += *next_str_len;
+	*next_str_len = 0;
+	i = 0;
+	while (**next_str && **next_str == c)
+		(*next_str)++;
+	while ((*next_str)[i])
+	{
+		if ((*next_str)[i] == c)
+			return ;
+		(*next_str_len)++;
+		i++;
+	}
+}
+
+char	**split(char const *s, char c)
+{
+	char			**tab;
+	char			*next_str;
+	unsigned int	n_slen;
+	unsigned int	count;
+	unsigned int	i;
+
+	if (!s)
+		return (NULL);
+	n_slen = 0;
+	i = 0;
+	count = ft_count_line_tab(s, c);
+	tab = (char **)malloc(sizeof(char *) * (count + 1));
+	if (!(tab))
+		return (NULL);
+	next_str = (char *)s;
+	while (i < count)
+	{
+		ft_get_next_str(&next_str, &n_slen, c);
+		tab[i] = (char *)malloc(sizeof(char) * (n_slen + 1));
+		if (!(tab[i]))
+			return (ft_malloc_error(tab));
+		strlcpy(tab[i++], next_str, n_slen + 1);
+	}
+	tab[i] = NULL;
+	return (tab);
+}
+
+
 
 std::string DelWhiteSpace(std::string str)
 {
     for (size_t i = 0; i < str.length(); i++)
     {
         if ( std::isspace(str[i]) != 0)
+        {
+            str.erase(i, 1);
+            i -= 1;
+        }
+    }
+    return str;
+}
+
+std::string DelTab(std::string str)
+{
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        if (str[i] == '\r')
         {
             str.erase(i, 1);
             i -= 1;
@@ -136,7 +252,58 @@ void string_to_request(const std::string& request_string)
         value = DelWhiteSpace(value);
         SetHeader(key, value);
     }
-    SetBody(message_body);
+    std::map<std::string, std::string>::iterator it = _headers.find("Transfer-Encoding");
+    if (it != _headers.end())
+    {
+        bool chunk = false;
+        char **array = split(it->second.c_str(), ',');
+        for (int i = 0; array[i] != NULL; i++)
+        {
+            if (strstr((const char *)(array + i), "chunked") != NULL)
+                chunk = true;
+            free(array + i);
+        }
+        free(array);
+        if (it == _headers.end() && chunk == false)
+        {
+            _status = 411;
+            return ;
+        }
+        if (chunk == true)
+        {
+            errno = 0;
+            long data_size = strtol(message_body.c_str(), NULL, 16);
+            if (errno != 0)
+            {
+                _status = 406;
+                return ;   
+            }
+            std::stringstream body_msg;
+            std::string line, body;
+            long chunk_size, current_size = 0;
+            while (std::getline(body_msg, line))
+            {
+                chunk_size = line.length() + 1;
+                if (chunk_size == 0)
+                    break;
+                if (current_size <= data_size)
+                {
+                    current_size += chunk_size = 1;
+                    line = trim(line);
+                    line += '\n';
+                    body += line;
+                }
+                if (current_size == chunk_size && std::getline(body_msg, line))
+                {
+			        chunk_size = strtol(line.c_str(), NULL, 16);
+			        current_size = 0;
+		        }
+            }
+            SetBody(body);
+        }
+    }
+    else
+        SetBody(message_body);
     _status = 0;
     return;
 }

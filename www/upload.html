@@ -10,14 +10,11 @@
 
 <body>
 	<h1>Webserv</h1>
-	<form action="" method="post" enctype="multipart/form-data">
-		<input type="file" name="file" />
+	<form method="post" enctype="multipart/form-data">
+		<input type="file" id="actual-btn" hidden/>
+		<label for="actual-btn">Choose File<br></label>
+		<input type="submit" class="submit-button">
 	</form>
-	<div class="center">
-		<a href="/">
-			<button>Home</button>
-		</a>
-	</div>
 	<footer>
 		<div class="wave"></div>
 		<div class="wave"></div>

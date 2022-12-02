@@ -44,12 +44,55 @@ h3
 	text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
 }
 
+label
+{
+    width: 120px;
+    height: 30px;
+    font-family: 'Courier New', Courier, monospace;
+    color: rgba(255, 255, 255, 0.706);
+    background: linear-gradient(45deg, rgba(2,0,36,0) 5%, rgba(255,255,255,0) 6%, rgb(255, 255, 255, 0) 9%,  rgba(255,255,255,0));
+    background-size: 150%;
+    transition: 1s;
+    font-size: 140%;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    box-shadow: inset 0px 3px 5px rgba(255,255,255,0.5), 0px 0px 10px rgba(0,0,0,0.15);
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    /* text-decoration: underline; */
+}
+
 a
 {
 	color:white;
 }
 
-button
+form
+{
+    text-align: center;
+}
+
+.submit-button
+{
+    width: 120px;
+    height: 30px;
+    font-family: 'Courier New', Courier, monospace;
+    color: rgba(255, 255, 255, 0.706);
+    background: linear-gradient(45deg, rgba(2,0,36,0) 5%, rgba(255,255,255,0) 6%, rgb(255, 255, 255, 0) 9%,  rgba(255,255,255,0));
+    background-size: 150%;
+    transition: 1s;
+    font-size: 150%;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    /* box-shadow: inset 0px 3px 5px rgba(255,255,255,0.5), 0px 0px 10px rgba(0,0,0,0.15); */
+    margin-top: 2%;
+    text-decoration: underline;
+}
+
+.home-button
 {
     width: 150px;
     height: 50px;
@@ -66,7 +109,7 @@ button
     transition: 1s;
 }
   
-button:hover
+.home-button:hover
 {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1), inset 0 0 1px rgba(255, 255, 255, 0.6);
     background: rgba(255, 255, 255, 0.1);
@@ -221,3 +264,4 @@ nav ul li a:hover
     color:white;
     transition: 1s;
 }
+
