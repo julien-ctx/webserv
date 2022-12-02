@@ -20,6 +20,7 @@ private:
     int _fd;
     struct sockaddr_in _addr;
     int _port;
+    bool rq;
 
     int _kq;
     char _buf[BUFFER_SIZE];
@@ -47,6 +48,7 @@ public:
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
+        rq = false;
     }
 
     ~Server() {}
@@ -127,6 +129,7 @@ public:
             std::cout << RED << "[CLIENT] connexion denied\n" << RESET;
             return;
         }
+        fcntl(client_fd, F_SETFL, O_NONBLOCK);
         EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
     }
@@ -144,6 +147,7 @@ public:
             this->_buf[ret] = 0;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+        rq = true;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;
     }
@@ -160,16 +164,13 @@ public:
         {
             if (requete._method == 0)
             sent = rep.methodGET(_ev_list, i);
-            if (sent < 0)
-            {
-                if (sent == -404)
-                    rep.send_404(_ev_list, i);
-                else
-                    exit_error("send function failed");
-            }
+            if (sent == -404)
+                rep.send_404(_ev_list, i);
         }
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+        rq = false;
+        delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
 
@@ -181,7 +182,6 @@ public:
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
         
-        bool rq = false;
         while (1)
         {
             // Waits for an event to occur and return number of events catched
@@ -193,15 +193,9 @@ public:
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ && !rq)
-                {
                     requete = request_handler(i);
-                    rq = true;
-                }
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && rq)
-                {
                     response_handler(i, requete);
-                    rq = false;
-                }
                 kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
         }
