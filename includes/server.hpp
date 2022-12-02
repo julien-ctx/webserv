@@ -129,6 +129,7 @@ public:
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
         EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+        EV_SET(&this->_ev_set, client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 5000, NULL);
     }
 
     // Receives request and sets the client ready to send the response
@@ -195,7 +196,9 @@ public:
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                if (this->_ev_list[i].flags & EV_EOF)
+                if (this->_ev_list[i].flags & EV_CLEAR)
+                    exit_error("Timeout"); // Send correct error here
+                else if (this->_ev_list[i].flags & EV_EOF)
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
