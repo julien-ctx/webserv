@@ -170,6 +170,8 @@ public:
             {
                 if (requete._method == 0)
                 sent = rep.methodGET(_ev_list, i);
+                if (requete._method > 2)
+                    rep.send_error(405, _ev_list, i);
             }
         }
         if (sent > 0)
