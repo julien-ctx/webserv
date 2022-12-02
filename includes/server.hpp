@@ -140,13 +140,14 @@ public:
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        if (ret > 0)
+            _rq = true;
         if (ret < 0)
             exit_error("recv function failed");
         else
             this->_buf[ret] = 0;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-        _rq = true;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;
     }
@@ -195,7 +196,7 @@ public:
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                if (this->_ev_list[i].flags & EV_CLEAR)
+                if (this->_ev_list[i].flags & EV_CLEAR && _rq)
                     exit_error("Timeout"); // Send correct error here
                 else if (this->_ev_list[i].flags & EV_EOF)
                     delete_client(this->_ev_list[i].ident);
