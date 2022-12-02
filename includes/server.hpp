@@ -12,15 +12,13 @@
 // https://www.garshol.priv.no/download/text/http-tut.html
 /* --------------------- */
 
-// data de kevent retourne le nb d'octet a recevoir pour POST !
-
 class Server
 {
 private:
     int _fd;
     struct sockaddr_in _addr;
     int _port;
-    bool rq;
+    bool _rq;
 
     int _kq;
     char _buf[BUFFER_SIZE];
@@ -47,7 +45,7 @@ public:
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
-        rq = false;
+        this->_rq = false;
     }
 
     ~Server() {}
@@ -146,7 +144,7 @@ public:
             this->_buf[ret] = 0;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-        rq = true;
+        _rq = true;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;
     }
@@ -168,7 +166,7 @@ public:
         }
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
-        rq = false;
+        _rq = false;
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
@@ -191,9 +189,9 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].filter == EVFILT_READ && !rq)
+                else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     requete = request_handler(i);
-                else if (this->_ev_list[i].filter == EVFILT_WRITE && rq)
+                else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     response_handler(i, requete);
                 kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
