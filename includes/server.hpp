@@ -20,6 +20,7 @@ private:
     int _fd;
     struct sockaddr_in _addr;
     int _port;
+    bool rq;
 
     int _kq;
     char _buf[BUFFER_SIZE];
@@ -46,6 +47,7 @@ public:
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
+        rq = false;
     }
 
     ~Server() {}
@@ -100,6 +102,12 @@ public:
 
     void listener()
     {
+        if ((this->_kq = kqueue()) < 0)
+        {
+            close(this->_fd);
+            exit_error("kqueue function failed");
+        }
+
         std::cout << BLUE << "[SERVER] " << "localhost:" + std::to_string(this->_port) << std::endl << RESET;
         // Listens on server fd, with a 128 (SOMAXCONN) pending connexion maximum
         if (listen(this->_fd, SOMAXCONN) < 0)
@@ -120,6 +128,7 @@ public:
             std::cout << RED << "[CLIENT] connexion denied\n" << RESET;
             return;
         }
+        fcntl(client_fd, F_SETFL, O_NONBLOCK);
         EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
     }
@@ -137,8 +146,8 @@ public:
             this->_buf[ret] = 0;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+        rq = true;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-
         return requete;
     }
 
@@ -154,48 +163,39 @@ public:
         {
             if (requete._method == 0)
             sent = rep.methodGET(_ev_list, i);
-            if (sent < 0)
-            {
-                if (sent == -404)
-                    rep.send_404(_ev_list, i);
-                else
-                    exit_error("send function failed");
-            }
+            if (sent == -404)
+                rep.send_404(_ev_list, i);
         }
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+        rq = false;
+        delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
 
     void launch()
     {
         Request requete;
-        if ((this->_kq = kqueue()) < 0)
-        {
-            close(this->_fd);
-            exit_error("kqueue function failed");
-        }
 
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-
+        kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+        
         while (1)
         {
-            kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             // Waits for an event to occur and return number of events catched
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                if (this->_ev_list[i].ident & EV_EOF)
+                if (this->_ev_list[i].flags & EV_EOF)
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].filter == EVFILT_READ)
-                {
+                else if (this->_ev_list[i].filter == EVFILT_READ && !rq)
                     requete = request_handler(i);
+                else if (this->_ev_list[i].filter == EVFILT_WRITE && rq)
                     response_handler(i, requete);
-                }
-                //else if (this->_ev_list[i].filter == EVFILT_WRITE)
+                kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
         }
     }

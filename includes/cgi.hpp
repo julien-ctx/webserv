@@ -22,41 +22,53 @@ public:
 			(path.substr(path.find_last_of(".") + 1) == "pl") ||
 			(path.substr(path.find_last_of(".") + 1) == "sh"))
 		{
+			std::ifstream file(this->_path);
+			if (file.fail())
+				return false;
 			this->_type = path.substr(path.find_last_of(".") + 1);
 			return true;
 		}
 		return false;
 	}
 
+	void clearFs(std::ifstream &fs)
+	{
+		fs.close();
+		fs.clear();
+	}
+
 	bool sendOutput(uintptr_t fd)
 	{
 		this->_name = this->_path.substr(this->_path.find_last_of("/") + 1);
 		std::ifstream file;
+
 		file.open("./www/snippets/header.html");
-		// if (file.fail())
-		// need to check errors and unexisting file
-		// need to check environment variables too
+		if (file.fail())
+			return send(fd, "", 0, 0);
 		this->_html << file.rdbuf();
-		file.close();
-		file.clear();
+		clearFs(file);
+
 		this->_html << ("<title>" + this->_name + "</title>");
 		file.open("./www/snippets/links.html");
+		if (file.fail())
+			return send(fd, "", 0, 0);
 		this->_html << file.rdbuf();
-		file.close();
-		file.clear();
+		clearFs(file);
+
 		this->_html << "<body><h1>" + this->_output + "</h1>";
 		file.open("./www/snippets/footer.html");
+		if (file.fail())
+			return send(fd, "", 0, 0);
 		this->_html << file.rdbuf();
-		file.close();
-		file.clear();
-		std::string header = std::string("HTTP/1.1 200 OK\nContent-Length: ") + std::to_string(this->_html.str().size()) + "\n Content-Type: text/html\r\n";
-		send(fd, (header + this->_html.str()).c_str(), (header + this->_html.str()).size(), 0);
-		return true;
+		clearFs(file);
+		
+		std::string header = std::string("HTTP/1.1 200 OK\n");
+		header += ("Content-Length: " + std::to_string(this->_html.str().size()) + "\n Content-Type: text/html\r\n");
+		return send(fd, (header + this->_html.str()).c_str(), (header + this->_html.str()).size(), 0);
 	}
 
 	bool execute(uintptr_t fd)
 	{
-		(void)fd;
 		int fds[2];
 		if (pipe(fds) < 0)
 			exit_error("pipe function failed");
@@ -65,6 +77,7 @@ public:
 			exit_error("fork function failed");
 		else if (!id)
 		{
+			close(fds[0]);
 			dup2(fds[1], STDOUT_FILENO);
 			close(fds[1]);
 			char *cmd[3];
