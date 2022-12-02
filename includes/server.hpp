@@ -137,12 +137,14 @@ public:
         Request requete;
 
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
+
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
         if (ret < 0)
             exit_error("recv function failed");
         else
             this->_buf[ret] = 0;
         requete.string_to_request(_buf);
+        std::cout << requete._status << std::endl;
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         _rq = true;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
@@ -155,14 +157,20 @@ public:
         int sent = false;
         CGI cgi(requete.GetUri().GetPath());
         Response rep(requete);
-        if (cgi.isCGI(requete))
-            sent = cgi.execute(this->_ev_list[i].ident);
+        if (rep._status != 0)
+        {
+            sent = rep.send_error(requete._status, _ev_list, i);
+            rep._status = 0;
+        }
         else
         {
-            if (requete._method == 0)
-            sent = rep.methodGET(_ev_list, i);
-            if (sent == -404)
-                rep.send_404(_ev_list, i);
+            if (cgi.isCGI(requete))
+                sent = cgi.execute(this->_ev_list[i].ident);
+            else
+            {
+                if (requete._method == 0)
+                sent = rep.methodGET(_ev_list, i);
+            }
         }
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;

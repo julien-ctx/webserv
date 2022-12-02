@@ -6,6 +6,7 @@
 #include "Uri.hpp"
 #include "request.hpp"
 
+
 long GetFileSize( std::ifstream & Fichier ) 
 { 
     // sauvegarder la position courante 
@@ -81,7 +82,7 @@ std::string _content;
 public:
 	/* ----- Constructors ----- */
 	Response() {}
-	Response(const Request& req) : _method(req._method), _version(req._version), _uri(req._uri), _headers(req._headers) {}
+	Response(const Request& req) : _method(req._method), _version(req._version), _uri(req._uri), _headers(req._headers), _status(req._status) {}
 
 	~Response() {}
     /* ------------------------ */
@@ -124,10 +125,7 @@ std::string mime_parser()
 		buffer.clear();
 		file.open("./www" + _uri._path);
 		if (!file)
-		{
-			_status = 404;
-			return send_404(ev_list, i);
-		}
+			return send_error(404, ev_list, i);
 		_status = 200;
 		buffer << file.rdbuf();
 		s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
@@ -139,17 +137,21 @@ std::string mime_parser()
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
 
-	bool send_404(struct kevent *ev_list , int i)
+	bool send_error(int status, struct kevent *ev_list , int i)
 	{
+		std::string 		file_name;
 		std::ifstream 		file;
 		std::stringstream 	s;
+		std::stringstream 	file_n;
 		std::stringstream buffer;
 
-		file.open("./www/404.html");
+		file_n << "./www/" << status << ".html";
+		file_name = file_n.str();
+		file.open(file_name);
 		if (!file)
-			std::cout << RED << "Cannot respond with 404\n" << RESET;
+			std::cout << RED << "Cannot respond with " << status << RESET;
 		buffer << file.rdbuf();
-		s << _version << " " << _status << " " << status_to_string(_status) << "\r\n"; 
+		s << _version << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
