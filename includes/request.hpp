@@ -96,8 +96,11 @@ void string_to_request(const std::string& request_string)
 
     rpos = request_string.find("\r\n", lpos);
     if (rpos == std::string::npos) // npos --> means "until the end of the string"
+    {
+        _status = 400;
         return;
-
+    }
+    
     start_line = request_string.substr(0, rpos);  // si bug essayer substr(lpos, rpos - lpos) mais lpos = 0 ici
     lpos = rpos + 2; // +1 pour \r +1 pour \n --> +2
     rpos = request_string.find("\r\n\r\n", lpos);   // --> r\n\r\n = debut du body / fin header
@@ -134,12 +137,15 @@ void string_to_request(const std::string& request_string)
         SetHeader(key, value);
     }
     SetBody(message_body);
+    _status = 0;
+    return;
 }
 
 std::map<std::string, std::string>  _headers;
 std::string                         _version;
 std::string                         _body;
 
+int _status;
 int _method;
 Uri _uri;
 

@@ -9,10 +9,8 @@ private:
 	std::string _output;
 	std::string _path;
 	std::string _type;
-	std::stringstream _html;
-	std::string _name;
 public:
-	CGI(std::string file) : _output(""), _path("./www/" + file), _html(""), _name("") {}
+	CGI(std::string file) : _output(""), _path("./www/" + file) {}
 	~CGI() {}
 
 	bool isCGI(Request &request)
@@ -31,40 +29,11 @@ public:
 		return false;
 	}
 
-	void clearFs(std::ifstream &fs)
-	{
-		fs.close();
-		fs.clear();
-	}
-
 	bool sendOutput(uintptr_t fd)
 	{
-		this->_name = this->_path.substr(this->_path.find_last_of("/") + 1);
-		std::ifstream file;
-
-		file.open("./www/snippets/header.html");
-		if (file.fail())
-			return send(fd, "", 0, 0);
-		this->_html << file.rdbuf();
-		clearFs(file);
-
-		this->_html << ("<title>" + this->_name + "</title>");
-		file.open("./www/snippets/links.html");
-		if (file.fail())
-			return send(fd, "", 0, 0);
-		this->_html << file.rdbuf();
-		clearFs(file);
-
-		this->_html << "<body><h1>" + this->_output + "</h1>";
-		file.open("./www/snippets/footer.html");
-		if (file.fail())
-			return send(fd, "", 0, 0);
-		this->_html << file.rdbuf();
-		clearFs(file);
-		
 		std::string header = std::string("HTTP/1.1 200 OK\n");
-		header += ("Content-Length: " + std::to_string(this->_html.str().size()) + "\n Content-Type: text/html\r\n");
-		return send(fd, (header + this->_html.str()).c_str(), (header + this->_html.str()).size(), 0);
+		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\n Content-Type: text/html\r\n");
+		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
 	}
 
 	bool execute(uintptr_t fd)

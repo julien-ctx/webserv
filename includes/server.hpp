@@ -12,22 +12,19 @@
 // https://www.garshol.priv.no/download/text/http-tut.html
 /* --------------------- */
 
-// data de kevent retourne le nb d'octet a recevoir pour POST !
-
 class Server
 {
 private:
     int _fd;
     struct sockaddr_in _addr;
     int _port;
-    bool rq;
+    bool _rq;
 
     int _kq;
     char _buf[BUFFER_SIZE];
     struct kevent _ev_set;
     struct kevent _ev_list[SOMAXCONN];
     socklen_t _socklen;
-
     int _clients[SOMAXCONN];
 
 public:
@@ -48,7 +45,7 @@ public:
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
-        rq = false;
+        this->_rq = false;
     }
 
     ~Server() {}
@@ -132,6 +129,7 @@ public:
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
         EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+        EV_SET(&this->_ev_set, client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 5000, NULL);
     }
 
     // Receives request and sets the client ready to send the response
@@ -140,6 +138,7 @@ public:
         Request requete;
 
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
+
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
         if (ret < 0)
             exit_error("recv function failed");
@@ -147,7 +146,7 @@ public:
             this->_buf[ret] = 0;
         requete.string_to_request(_buf);
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-        rq = true;
+        _rq = true;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;
     }
@@ -158,18 +157,26 @@ public:
         int sent = false;
         CGI cgi(requete.GetUri().GetPath());
         Response rep(requete);
-        if (cgi.isCGI(requete))
-            sent = cgi.execute(this->_ev_list[i].ident);
+        if (rep._status != 0)
+        {
+            sent = rep.send_error(requete._status, _ev_list, i);
+            rep._status = 0;
+        }
         else
         {
-            if (requete._method == 0)
-            sent = rep.methodGET(_ev_list, i);
-            if (sent == -404)
-                rep.send_404(_ev_list, i);
+            if (cgi.isCGI(requete))
+                sent = cgi.execute(this->_ev_list[i].ident);
+            else
+            {
+                if (requete._method == 0)
+                sent = rep.methodGET(_ev_list, i);
+                if (requete._method > 2)
+                    rep.send_error(405, _ev_list, i);
+            }
         }
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
-        rq = false;
+        _rq = false;
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
     }
@@ -188,13 +195,15 @@ public:
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                if (this->_ev_list[i].flags & EV_EOF)
+                if (this->_ev_list[i].flags & EV_CLEAR)
+                    exit_error("Timeout"); // Send correct error here
+                else if (this->_ev_list[i].flags & EV_EOF)
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].filter == EVFILT_READ && !rq)
+                else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     requete = request_handler(i);
-                else if (this->_ev_list[i].filter == EVFILT_WRITE && rq)
+                else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     response_handler(i, requete);
                 kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
