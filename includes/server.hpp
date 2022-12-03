@@ -140,6 +140,7 @@ public:
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        std::cout << YELLOW << this->_buf << std::endl << RESET;
         if (ret > 0)
             _rq = true;
         if (ret < 0)

@@ -10,10 +10,10 @@
 
 <body>
 	<h1>Webserv</h1>
-	<form method="post" enctype="multipart/form-data">
-		<input type="file" id="actual-btn" hidden/>
+	<form method="post" action="./cgi/upload.php" enctype="multipart/form-data">
+		<input type="file" id="actual-btn" name="file" hidden required/>
 		<label for="actual-btn">Choose File<br></label>
-		<input type="submit" class="submit-button" value="Submit">
+		<input type="submit" class="submit-button" name="submit" value="Submit">
 	</form>
 	<footer>
 		<div class="wave"></div>

@@ -18,6 +18,7 @@ public:
 		std::string path = request.GetUri().GetPath();
 		if ((path.substr(path.find_last_of(".") + 1) == "py") ||
 			(path.substr(path.find_last_of(".") + 1) == "pl") ||
+			(path.substr(path.find_last_of(".") + 1) == "php") ||
 			(path.substr(path.find_last_of(".") + 1) == "sh"))
 		{
 			std::ifstream file(this->_path);
@@ -56,6 +57,8 @@ public:
 				exec = "/usr/local/bin/python3";
 			else if (this->_type == "pl")
 				exec = "/usr/bin/perl";
+			else if (this->_type == "php")
+				exec = "/opt/homebrew/bin/php";
 			else if (this->_type == "sh")
 				exec = "/bin/bash";
 			cmd[0] = const_cast<char *>(exec.c_str());
