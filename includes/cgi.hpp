@@ -32,7 +32,8 @@ public:
 	bool sendOutput(uintptr_t fd)
 	{
 		std::string header = std::string("HTTP/1.1 200 OK\n");
-		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\n Content-Type: text/html\r\n");
+		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\nContent-Type: text/html\r\n\n");
+		std::cout << (header + this->_output).c_str() << std::endl;
 		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
 	}
 

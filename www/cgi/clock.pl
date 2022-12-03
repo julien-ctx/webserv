@@ -3,7 +3,6 @@
 use POSIX qw(strftime);
 
 my $date = strftime "%c", localtime;
-print ("$date\n");
 
 my $html = '<!DOCTYPE html>
 <html lang="en" >
