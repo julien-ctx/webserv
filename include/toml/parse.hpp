@@ -20,7 +20,7 @@ namespace TOML
         typedef float							type_float;
         typedef bool							type_bool;
         typedef std::string						type_string;
-        typedef std::vector<type_table*>		type_array;
+        typedef std::vector<type_table>		type_array;
         typedef std::tm							type_date_time;
 
 		typedef std::vector<type_table>::allocator_type	Allocator;
@@ -39,11 +39,14 @@ namespace TOML
 		public:
 		type_table	_root; //the root of all values
 		type_array	_hash_tables; //the array where all values are in it
-		pointer		_here; //the table where we are now
+		type_string	_here; //the table where we are now
 		Allocator	_allocator;
 
 		public:
-		parse(): _root("", false), _hash_tables(type_array()), _here(&_root), _allocator(Allocator()) {}
+		parse(type_string config_file): _root("", false), _hash_tables(type_array()), _here(_root._key), _allocator(Allocator())
+		{
+			begin_parse(config_file);
+		}
 		~parse() {}
 
 		
@@ -53,13 +56,13 @@ namespace TOML
 		reverse_iterator	rbegin() { return this->_hash_tables.rbegin();}
 		reverse_iterator	rend() { return this->_hash_tables.rend();}
 		//  to do private
-		public:
+		private:
 		//insertion of new values
 		// insertion of int/bool/float
 		void	insert(type_string key, type_string val);
 		void	insert_table(type_string key, bool is_array);
 		//parse
-		void	begin_parse(void);
+		void	begin_parse(type_string config_file);
 		// remttre le & a str?
 		void	parse_line(type_string str, size_t line_nbr);
 		bool	is_hexa(char c);
@@ -78,10 +81,6 @@ namespace TOML
 		bool	str_is_table(type_string str);
 		bool	only_binary(type_string str);
 		bool	only_octal(type_string str);
-		//searching
-		pointer				at_key_parent(type_string key, pointer parent);
-		value::type_array	by_table(pointer parent);
-		value::type_array	by_key(type_string key);
 
 		//utiles
 		type_string					table_last_key(type_string str, TOML::types t, bool is_array, size_t line_nbr);
@@ -95,7 +94,14 @@ namespace TOML
 		float						char_to_int(char c);
 		void						child_correct_parent(value::type_array to_change, value::type_array changer);
 		type_table					new_table(type_string key, bool	has_array);
+		type_string					adding_here(type_string table_key);
+		type_string					remove_here(type_string table_key, type_string table_parent);
 
+		public:
+		//searching
+		pointer				at_key_parent(type_string key, type_string parent);
+		type_array			by_table(type_string parent);
+		type_array			by_key(type_string key);
 
 
     };

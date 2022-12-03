@@ -6,7 +6,7 @@ namespace TOML
     // interprete and change the string val, so it can be include in the _hash_tables
     void	parse::insert(type_string key, type_string val)
     {
-        type_table *new_value;
+        type_table new_value;
         if (str_is_string(val))
         {
             if (val[0] == '"')
@@ -27,7 +27,7 @@ namespace TOML
                 else
                     val = check_empty_string(val, 2);
             }
-            new_value = new type_table(key, val);
+            new_value = type_table(key, val);
         }
         else if (str_is_nbr(val))
         {
@@ -38,11 +38,11 @@ namespace TOML
                 t = T_int;
             else
                 t = T_float;
-            new_value = new type_table(key, TOML::parse::atof(val), t);
+            new_value = type_table(key, TOML::parse::atof(val), t);
         }
 		else
 		{
-            new_value = new type_table(key, false);
+            new_value =  type_table(key, false);
 		}
         // to do ou don't bother ? to be continued... ==>
         // else if (str_is_date(val))
@@ -53,22 +53,62 @@ namespace TOML
         // {
             
         // }
-        new_value->_parent = this->_here;
+        new_value._parent = this->_here;
         this->_hash_tables.push_back(new_value);
     }
 
 
 	void	parse::insert_table(type_string key, bool is_array)
     {
-		type_table *new_value;
-        new_value = new type_table(key, is_array);
-        new_value->_parent = this->_here;
+		type_table new_value(key, is_array);
+        new_value._parent = this->_here;
         // std::cout << "key = " << key << " parent key = "<< this->_here->_key << std::endl;
         this->_hash_tables.push_back(new_value);
         // std::cout << "awesome : " << this->_hash_tables[0]->_key  << " ftg" <<  this->_hash_tables[0]->_parent<< std::endl;
     }
 
-    //parse
+    //parse line by line
+    void    parse::begin_parse(type_string config_file)
+    {
+        std::ifstream	file(config_file);
+        type_string     line;
+        type_string     temp;
+        size_t          pos;
+        type_string     dquote;
+        size_t          line_nbr = 0;
+
+        while(std::getline(file, temp))
+        {
+            line = temp;
+            if (temp.find("\"\"\"") != std::string::npos || temp.find("'''") != std::string::npos )
+            {
+                if (temp.find("\"\"\"") != std::string::npos && (temp.find("'''") == std::string::npos || (int)temp.find("'''") <= (int)temp.find("\"\"\"")))
+                    dquote = "\"\"\"";
+                else
+                    dquote = "'''";
+                pos = temp.find(dquote) + 1;
+                do
+                {
+                    std::cout << "temp = " << temp << " pos = " << pos << std::endl;
+                    if (pos == 0)
+                    {
+                        line += "\n";
+                        line += temp;
+                    }
+                    while (temp.find(dquote, pos) != std::string::npos && temp[temp.find(dquote, pos) - 1] == '\\')
+                        pos = temp.find(dquote, pos) + 1;
+                    if (temp.find(dquote, pos) != std::string::npos)
+                        break ;
+                    pos = 0;
+                    line_nbr++;
+                }  while (std::getline(file, temp));
+            }
+            std::cout << "Line " << line_nbr << " = " << line << std::endl;
+            parse_line(line, line_nbr);
+            line_nbr++;
+        }
+       file.close();
+    }
 
     //  parse a line in a document
 	void	parse::parse_line(type_string str, size_t line_nbr)
@@ -100,7 +140,7 @@ namespace TOML
                 if (str[str.length() - 2] != ']')
                     throw	ErrorParse("Expected two ']' character", line_nbr);
             }
-			this->_here = &_root;
+			this->_here = _root._key;
             size_t  i = str.length() - is_bracket - 1;
             while (is_whitespace(str[i]))
                     i--;
@@ -121,7 +161,9 @@ namespace TOML
         }
         else
         {
-            std::vector<type_string> key_value(str_split(str, type_string("=")));
+            std::vector<type_string>	key_value(str_split(str, type_string("=")));
+        	type_string					prev_here(this->_here);
+			
 
         // std::cout << "yolol" << std::endl;
             if (key_value.size() != 2)
@@ -141,6 +183,7 @@ namespace TOML
             if (!str_is_nbr(key_value[1]) && !str_is_string(key_value[1]))
                 throw	TypeUndefined("Couldn't find a type that correspond for this value");
             insert(key, key_value[1]);
+			this->_here = prev_here;
         }
 
     }
@@ -241,6 +284,8 @@ namespace TOML
             {
                 for (size_t i = 1; i < str.length() - 1; i++)
 				{
+					if (str[i] == '\n' || (str[i] ==  '"' && i < str.length() - 1))
+						return false;
                     if (i > 1 && str[i - 1] == '\\' && (!valid_antislash(str[i]) || is_whitespace(str[i]) || str[i] == '"')
 						&& aslash_counter % 2 == 1)
 						return false;
@@ -254,8 +299,6 @@ namespace TOML
 								return false;
                         // std::cout << "5th" << std::endl;
 					}
-					if (str[i] == '\n')
-						return false;
 					if (str[i] == '\\')
 						aslash_counter++;
 					else
@@ -434,53 +477,35 @@ namespace TOML
 
     //searching
     //  return a pointer of value base on is key and parent
-	parse::pointer	parse::at_key_parent(type_string key, pointer parent)
+	parse::pointer	parse::at_key_parent(type_string key, type_string parent)
     {
 
 		for (size_t i = 0; i < this->_hash_tables.size(); i++)
 		{
-            	// std::cout << "Tony glaire : " << this->_hash_tables[i]->_key  << " ftg" <<  this->_hash_tables[i]->_parent<< std::endl;
-			if (!key.compare(this->_hash_tables[i]->_key) && this->_hash_tables[i]->_parent == parent)
-            {
-                return this->_hash_tables[i];
-            }
+            if (!key.compare(this->_hash_tables[i]._key) && !parent.compare(this->_hash_tables[i]._parent))
+                return &this->_hash_tables[i];
 		}
-		
-		
-        // while (it != this->end())
-        // {
-        //     // std::cout << "key " << key << " persona " << this->_here->_key << std::endl;
-
-        //     // std::cout << "slam " << it->_key << " jam  " << key << std::endl;
-        //     std::cout << "Tony glaire : " << (*it.base())->_key  << " ftg" <<  (*it.base())->_parent<< std::endl;
-        //     if (!key.compare((*it.base())->_key) && (*it.base())->_parent == parent)
-        //     {
-        //         return *it.base();
-        //     }
-        //     // std::cout << "poulet" << key << std::endl;
-        //     it++;
-        // }
         return NULL;
     }
 	// 
 
-	value::type_array	parse::by_key(type_string key)
+	parse::type_array	parse::by_key(type_string key)
 	{
-		value::type_array	ar;
+		parse::type_array	ar;
 		for (size_t i = 0; i < this->_hash_tables.size(); i++)
 		{
-			if (this->_hash_tables[i]->_key == key)
+			if (this->_hash_tables[i]._key == key)
 				ar.push_back(this->_hash_tables[i]);
 		}
 		return ar;
 	}
 
-	value::type_array	parse::by_table(pointer parent)
+	parse::type_array	parse::by_table(type_string parent)
 	{
-		value::type_array	ar;
+		parse::type_array	ar;
 		for (size_t i = 0; i < this->_hash_tables.size(); i++)
 		{
-			if (this->_hash_tables[i]->_parent == parent)
+			if (!parent.compare(this->_hash_tables[i]._parent))
 				ar.push_back(this->_hash_tables[i]);
 		}
 		return ar;
@@ -495,7 +520,7 @@ namespace TOML
         pointer				original;
         type_string         convert;
         type_string         ret;
-        pointer             prev_here;
+        type_string			prev_here;
         pointer             to_add;
 		type_table			new_one(type_string("0"), false);
 
@@ -515,17 +540,11 @@ namespace TOML
                 if (original == NULL)
                     insert_table(tables[i], false);
                 original = at_key_parent(tables[i], this->_here);
-                // if (original == NULL)
-                    // std::cout << "cringe " << i << std::endl;
-                if (!original->_is_array_table)
-                {
-                    // std::cout << "dunk " << i << std::endl;
-                    this->_here = original;
-                }
-                else
+                adding_here(original->_key);
+                if (original->_is_array_table)
                 {
                     convert = type_string(1, static_cast<char>((original->_array.size() - 1) + 48));
-                    this->_here = at_key_parent(convert, original);
+                    adding_here(at_key_parent(convert, original->_key)->_key);
                 }
             }
             else
@@ -535,48 +554,36 @@ namespace TOML
                     if (original->_typing != T_table || !is_array)
                         throw ErrorParse("Value already exist in this table", line_nbr);
                     prev_here = this->_here;
-                    this->_here = at_key_parent(tables[i], this->_here);
-                    convert = std::to_string(this->_here->_array.size());
+                    adding_here(at_key_parent(tables[i], this->_here)->_key);
+                    convert = std::to_string(original->_array.size());
                     insert_table(convert, false);
                     original = at_key_parent(convert, this->_here);
                     to_add = at_key_parent( tables[i], prev_here);
                     to_add->_array.push_back(original);
-                    this->_here = at_key_parent(convert, this->_here);
+                    adding_here(at_key_parent(convert, this->_here)->_key);
                 }
                 else
                 {
                     if (t == T_table)
                     {
                         insert_table(tables[i], is_array);
-        				// std::cout << "Tony glaire : " << this->_hash_tables[0]->_key  << " ftg" <<  this->_hash_tables[0]->_parent<< std::endl;
-                        original = at_key_parent(tables[i], this->_here);
-                        // std::cout << original << std::endl;
+        				original = at_key_parent(tables[i], this->_here);
                         prev_here = this->_here;
-                        this->_here = original;
+                        adding_here(original->_key);
                     }
                     if (is_array)
                     {
                         convert = type_string("0");
-                        // std::cout << "AAAAAAAAAAAA " <<this->_here->_key  << std::endl;
-                        // insert_table(convert, false);
-                        // std::cout << this->_here->_key<< this->_here  << std::endl;
-                        // original = at_key_parent(convert, this->_here);
+                    	insert_table(convert, false);
+                    	original = at_key_parent(convert, this->_here);
                         to_add = at_key_parent(tables[i], prev_here);
-                        // std::cout << "AAAAAAAAAAAA " <<this->_here->_key  << std::endl;
-                        to_add->_array.push_back(&new_one);
-                        this->_hash_tables.push_back(&new_one);
-						this->_hash_tables[this->_hash_tables.size() - 1]->_parent = this->_here;
-                        // std::cout << "AAAAAAAAAAAA " <<this->_hash_tables[this->_hash_tables.size() - 1]._key  << std::endl;
-                        original->_parent = to_add;
-                        this->_here = original;
-                        // std::cout << "reeeeeet " << &this->_hash_tables[this->_hash_tables.size() - 1]  << std::endl;
+                    	to_add->_array.push_back(original);
+						adding_here(original->_key);
                     }
                 }
                 ret = tables[i];
             }
         }
-            // std::cout << "mam = " << ret << std::endl;
-        // std::cout << "12th" << std::endl;
         return ret;
     }
 
@@ -834,16 +841,18 @@ namespace TOML
 		return 0;
 	}
 
-	// child
-	// void	parse::child_correct_parent(type_string parent_key)
-	// {
-	// 	iterator    it(this->begin());
-	// }
-
 	parse::type_table	parse::new_table(type_string key, bool	has_array)
 	{
 		return (type_table(key, has_array));
 	}
 
+	// add a table to _here 
+	parse::type_string					parse::adding_here(type_string table_key)
+	{
+		if (this->_here.size())
+			this->_here += ".";
+		this->_here += table_key;
+		return this->_here;
+	}
 
 }

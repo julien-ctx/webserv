@@ -25,9 +25,10 @@ namespace   TOML
 
 		
 		//variable
+		public:
 		TOML::types		_typing;
 		type_string		_key;
-		type_table		*_parent;
+		type_string		_parent;
 		bool			_is_array_table;
 
 
@@ -88,7 +89,7 @@ namespace   TOML
 		}
 
 		~value() {}
-
+		//operator
 		TOML::value& operator=(const TOML::value &copy)
 		{
 			this->_key = copy._key;
