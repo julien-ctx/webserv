@@ -167,7 +167,7 @@ public:
         else
         {
             if (cgi.isCGI(requete))
-                sent = cgi.execute(this->_ev_list[i].ident);
+                sent = cgi.execute(this->_ev_list[i].ident, requete);
             else
             {
                 if (requete._method == 0)

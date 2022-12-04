@@ -41,7 +41,7 @@ public:
 		return false;
 	}
 
-	bool sendOutput(uintptr_t fd)
+	bool sendOutput(uintptr_t &fd)
 	{
 		std::string header = std::string("HTTP/1.1 200 OK\n");
 		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\nContent-Type: text/html\r\n\n");
@@ -49,7 +49,7 @@ public:
 		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
 	}
 
-	bool execute(uintptr_t fd)
+	bool execute(uintptr_t &fd, Request &rq)
 	{
 		int fds[2];
 		if (pipe(fds) < 0)
@@ -79,6 +79,18 @@ public:
 				_env.push_back(std::string(environ[i]));
 			_env.push_back("QUERY_STRING=");
 			_env.push_back("PATH_INFO=/");
+			switch (rq.GetMethod())
+			{
+				case GET:
+					_env.push_back("REQUEST_METHOD=GET");
+					break;
+				case POST:
+					_env.push_back("REQUEST_METHOD=POST");
+					break;
+				case DELETE:
+					_env.push_back("REQUEST_METHOD=DELETE");
+					break;
+			}
 			if (execve(cmd[0], cmd, getEnv()) < 0)
 				exit_error("Invalid CGI program");
 		}
