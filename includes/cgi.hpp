@@ -51,17 +51,24 @@ public:
 
 	bool execute(uintptr_t &fd, Request &rq)
 	{
-		int fds[2];
-		if (pipe(fds) < 0)
+		int out[2];
+		int in[2];
+		if (pipe(out) < 0)
 			exit_error("pipe function failed");
 		int id = fork();
 		if (id < 0)
 			exit_error("fork function failed");
 		else if (!id)
 		{
-			close(fds[0]);
-			dup2(fds[1], STDOUT_FILENO);
-			close(fds[1]);
+			pipe(in);
+			write(in[1], rq.GetBody().c_str(), rq.GetBodyLenght());
+			close(in[1]);
+
+			dup2(in[0], STDIN_FILENO);
+			close(in[0]);
+			dup2(out[1], STDOUT_FILENO);
+			close(out[1]);
+
 			char *cmd[3];
 			std::string exec;
 			if (this->_type == "py")
@@ -97,13 +104,13 @@ public:
 		waitpid(0, NULL, 0);
 		char buf[2];
 		std::memset(buf, 0, 1);
-		close(fds[1]);
-		while (read(fds[0], buf, 1) > 0)
+		close(out[1]);
+		while (read(out[0], buf, 1) > 0)
 		{
 			buf[1] = 0;
 			this->_output += std::string(buf);
 		}
-		close(fds[0]);
+		close(out[0]);
 		return sendOutput(fd);
 	}
 };

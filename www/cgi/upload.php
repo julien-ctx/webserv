@@ -3,10 +3,7 @@
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST")
 {
-    if (isset($_FILES["file"]))
-      echo "yes";
-    else
-      echo "couldn't retrieve file content";
+    echo var_dump($_FILES);
 }
 else
 {

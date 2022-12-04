@@ -1,3 +1,4 @@
 #!/usr/local/bin/python3
+import cgi
 
-print("I am not empty")
+form = cgi.FieldStorage()
