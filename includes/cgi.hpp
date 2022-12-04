@@ -9,9 +9,20 @@ private:
 	std::string _output;
 	std::string _path;
 	std::string _type;
+	std::vector<std::string> _env;
 public:
 	CGI(std::string file) : _output(""), _path("./www/" + file) {}
 	~CGI() {}
+
+	char **getEnv()
+	{
+		char **cmd = new char*[this->_env.size() + 1];
+		int i;
+		for (i = 0; i < static_cast<int>(this->_env.size()); i++)
+			cmd[i] = strdup(this->_env[i].c_str());
+		cmd[i] = NULL;
+		return cmd;
+	}
 
 	bool isCGI(Request &request)
 	{
@@ -64,7 +75,11 @@ public:
 			cmd[0] = const_cast<char *>(exec.c_str());
 			cmd[1] = const_cast<char *>(this->_path.c_str());
 			cmd[2] = NULL;
-			if (execve(cmd[0], cmd, environ) < 0)
+			for (int i = 0; environ[i]; i++)
+				_env.push_back(std::string(environ[i]));
+			_env.push_back("QUERY_STRING=");
+			_env.push_back("PATH_INFO=/");
+			if (execve(cmd[0], cmd, getEnv()) < 0)
 				exit_error("Invalid CGI program");
 		}
 		waitpid(0, NULL, 0);
