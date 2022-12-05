@@ -27,6 +27,8 @@ private:
     socklen_t _socklen;
     int _clients[SOMAXCONN];
 
+    std::string _full_rq;
+
 public:
 	/* ----- Constructors ----- */
     Server() {}
@@ -136,18 +138,29 @@ public:
     Request request_handler(int &i)
     {
         Request requete;
-
+        static size_t curr_len = 0;
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-        std::cout << YELLOW << this->_buf << std::endl << RESET;
-        if (ret > 0)
-            _rq = true;
         if (ret < 0)
             exit_error("recv function failed");
         else
             this->_buf[ret] = 0;
+        _full_rq += std::string(_buf);
         requete.string_to_request(_buf);
+        curr_len = requete._length != 0 ? curr_len + requete._length : 0;
+        std::cout << MAGENTA << requete._length << std::endl;
+        std::cout << YELLOW << this->_full_rq << std::endl << RESET;
+        if (_full_rq.size() == requete._length && requete.GetMethod() == POST)
+        {
+            _full_rq = "";
+            _rq = true;
+        }
+        else if (requete.GetMethod() == GET)
+        {
+            _full_rq = "";
+            _rq = true;
+        }
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;
@@ -176,8 +189,6 @@ public:
                     rep.send_error(405, _ev_list, i);
             }
         }
-        std::cout << MAGENTA << "octets send : " << &send << std::endl;
-        std::cout << MAGENTA << "Content Length : " << rep._length << std::endl;
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         _rq = false;

@@ -239,9 +239,8 @@ void string_to_request(const std::string& request_string)
     if (path == "/")
         path += "index.html";
     SetUri(Uri(path));
-    if (version.compare(GetVersion()) != 0)
+    if (version.compare(GetVersion()) != 0 && _method == 0)
         throw std::logic_error("wrong HTTP version");
-    
     iss.clear();  // parse header fields
     iss.str(header_lines);
     while (std::getline(iss, line)) // --> cet overload de getline = gnl en gros
