@@ -76,6 +76,7 @@ Uri _uri;
 std::map<std::string, std::string>  _headers;
 std::string                         _body;
 int _status;
+long	_data_size;
 
 std::string _content;
 

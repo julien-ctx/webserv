@@ -140,7 +140,7 @@ else if (method_string == "POST")
 else if (method_string == "DELETE")
     return 2;
 else
-    throw std::invalid_argument("Unexpected HTTP method");
+    return 3;
 }
 
 // A Request object represents a single HTTP request
@@ -249,6 +249,8 @@ void string_to_request(const std::string& request_string)
         std::getline(header_stream, key, ':'); // getline until ':'
         std::getline(header_stream, value);
         key = DelWhiteSpace(key);
+        if (key == "Content-Length")
+            _length = atoi(value.c_str());
         value = DelWhiteSpace(value);
         SetHeader(key, value);
     }
@@ -315,5 +317,6 @@ std::string                         _body;
 int _status;
 int _method;
 Uri _uri;
+size_t _length;
 
 };
