@@ -76,14 +76,14 @@ Uri _uri;
 std::map<std::string, std::string>  _headers;
 std::string                         _body;
 int _status;
-long	_data_size;
+size_t	_length;
 
 std::string _content;
 
 public:
 	/* ----- Constructors ----- */
 	Response() {}
-	Response(const Request& req) : _method(req._method), _version(req._version), _uri(req._uri), _headers(req._headers), _status(req._status) {}
+	Response(const Request& req) : _method(req._method), _version(req._version), _uri(req._uri), _headers(req._headers), _status(req._status), _length(req._length) {}
 
 	~Response() {}
     /* ------------------------ */

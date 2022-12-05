@@ -209,6 +209,7 @@ void string_to_request(const std::string& request_string)
     std::string         key, value;                   // for header
     Uri                 uri;
     size_t              lpos = 0, rpos = 0;
+    std::map<std::string, std::string>::iterator it;
 
     rpos = request_string.find("\r\n", lpos);
     if (rpos == std::string::npos) // npos --> means "until the end of the string"
@@ -249,13 +250,11 @@ void string_to_request(const std::string& request_string)
         std::getline(header_stream, key, ':'); // getline until ':'
         std::getline(header_stream, value);
         key = DelWhiteSpace(key);
-        if (key == "Content-Length")
-            _length = atoi(value.c_str());
         value = DelWhiteSpace(value);
         SetHeader(key, value);
     }
-    std::map<std::string, std::string>::iterator it = _headers.find("Transfer-Encoding");
-    if (it != _headers.end())
+    _length = _headers.find("Content-Length") == _headers.end() ? 0 : atoi(_headers.find("Content-Length")->second.c_str());
+    if (_headers.find("Transfer-Encoding") != _headers.end())
     {
         bool chunk = false;
         char **array = split(it->second.c_str(), ',');

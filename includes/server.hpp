@@ -156,7 +156,7 @@ public:
     // Sends the response and sets the socket ready to read the request again
     void response_handler(int &i, Request requete)
     {
-        int sent = false;
+        size_t sent = 0;
         CGI cgi(requete.GetUri().GetPath());
         Response rep(requete);
         if (rep._status != 0)
@@ -171,11 +171,13 @@ public:
             else
             {
                 if (requete._method == 0)
-                sent = rep.methodGET(_ev_list, i);
+                    sent = rep.methodGET(_ev_list, i);
                 if (requete._method > 2)
                     rep.send_error(405, _ev_list, i);
             }
         }
+        std::cout << MAGENTA << "octets send : " << &send << std::endl;
+        std::cout << MAGENTA << "Content Length : " << rep._length << std::endl;
         if (sent > 0)
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         _rq = false;
