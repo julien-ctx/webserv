@@ -4,6 +4,7 @@
 # include <cstring>
 # include <exception>
 # include "../include/toml/parse.hpp"
+# include "../include/config_parser.hpp"
 class b
 {
 private:
@@ -41,8 +42,10 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 		o << "\033[0;34m" << std::endl;
 	if (val._typing == TOML::T_string)
 		o << "\033[0;36m" << std::endl;
+	if (val._typing == TOML::T_array)
+		o << "\033[0;35m" << std::endl;
 	o << "Key = " << val._key;
-	if (val._typing != TOML::T_table)
+	if (val._typing != TOML::T_table && val._typing != TOML::T_array)
 	{
 		o << " Value = ";
 		if (val._typing == TOML::T_int)
@@ -55,7 +58,7 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 			o << val._string << std::endl << "Typing = string";
 		o << std::endl;
 	}
-	else
+	else if (val._typing == TOML::T_table)
 	{
 		o <<std::endl << "Typing = table has ";
 		if (!val._is_array_table)
@@ -65,16 +68,18 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 		{
 			for(size_t i = 0;i <val._array.size() ;i++)
 			{
-				o << "child = " << val._array[i]->_key << std::endl;
+				o << "child = " << val._array[i]._key << std::endl;
 			}
 		}
 	}
 	if (val._typing == TOML::T_array)
 	{
+		o << " Value = "<< std::endl;
 		for(size_t i = 0;i <val._array.size() ;i++)
 		{
-			o << "child = " << val._array[i]->_key << std::endl;
+			o << "child = " << val._array[i]._key << std::endl;
 		}
+		o << "Typing = array" << std::endl;
 	}
 	o << "key parent = " << val._parent << " coord = " << &val << "\033[0m" << std::endl;
 	return (o);
@@ -88,15 +93,6 @@ int main(int ac, char **av)
 	try
 	{
 		parse	yo("config/default.TOML");
-		// if (ac == 1)
-		// 	yo.insert("king kong", "\'Yolo\'");
-		// else
-		// {
-		// 	for (size_t i = 1; i < static_cast<size_t>(ac) ; i++)
-		// 	{
-		// 		yo.parse_line(std::string(av[i]), i - 1);
-		// 	}
-		// }
 
 		for (size_t i = 0; i < yo._hash_tables.size(); i++)
 		{
@@ -104,7 +100,7 @@ int main(int ac, char **av)
 		}
 	}
 	catch( const std::exception & e ) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << "e" << std::endl;
 		exit (1);
     }
 	// std::ifstream	file("config/default.TOML");

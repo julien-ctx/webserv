@@ -23,7 +23,6 @@ namespace TOML
         typedef std::vector<type_table>		type_array;
         typedef std::tm							type_date_time;
 
-		typedef std::vector<type_table>::allocator_type	Allocator;
 
 		typedef type_table*					pointer;
 		typedef type_table&					reference;
@@ -35,21 +34,33 @@ namespace TOML
         typedef type_array::reverse_iterator		reverse_iterator;
 
 		//variable
-		//  to do private
 		public:
 		type_table	_root; //the root of all values
 		type_array	_hash_tables; //the array where all values are in it
 		type_string	_here; //the table where we are now
-		Allocator	_allocator;
 
 		public:
-		parse(type_string config_file): _root("", false), _hash_tables(type_array()), _here(_root._key), _allocator(Allocator())
+		//constructors / destructors
+		parse(type_string config_file): _root("", false), _hash_tables(type_array()), _here(_root._key)
 		{
 			begin_parse(config_file);
 		}
 		~parse() {}
 
-		
+		//operators
+		TOML::parse	operator=(TOML::parse &copy)
+		{
+			this->_hash_tables.clear();
+			for (size_t i = 0; i < copy._hash_tables.size(); i++)
+			{
+				this->_hash_tables.push_back(copy._hash_tables[i]);
+			}
+			this->_here = copy._here;
+			
+			return *this;
+		}
+
+		//iterators
 		public:
 		iterator			begin() { return this->_hash_tables.begin();}
 		iterator			end() { return this->_hash_tables.end();}
@@ -60,6 +71,7 @@ namespace TOML
 		//insertion of new values
 		// insertion of int/bool/float
 		void	insert(type_string key, type_string val);
+		void	insert_array(type_string key, type_string str);
 		void	insert_table(type_string key, bool is_array);
 		//parse
 		void	begin_parse(type_string config_file);

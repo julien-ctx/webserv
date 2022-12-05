@@ -1,13 +1,46 @@
-[[server]]
-port = 42
-server_name = "Les Amis !"
-[[server.route]]
-[[server]]
-port = 42
-[[server]]
-port = ''' 
-E
+[http]
+include=["mime_types.toml"]
+
+	[[http.server]]
+	listen_port = 8080						
+	listen_addr = "127.0.0.1"				
+	server_name = ["localhost"]	
+	client_max_body_size = 1048576			
+
+	error_400 = "./res/error/400.html"		
+	error_500 = "./foo/bar.html"			
 
 
+[hello]
+truc = "muche"
+[http.a]
+bool = true
 
-'''
+	[[http.server]]							
+	listen_port = 4242
+	server_name = ["c4r2p6.42nice.fr", "www.c4r2p6.42nice.fr",
+					"c4r2p6"]
+
+		[[http.server.location]]
+		route = "/"								
+		root = "./demo/www"						
+		index = "index.html"					
+		allowed_methods = ["POST", "GET"]		
+		dir_listing = true						
+		include = ["fast_cgi.toml"]
+
+		[[http.server.location]]
+		route = "img"							
+		root = "/var/www"
+		index = "issberg.png"
+
+		[[http.server.location]]
+		route = "somethind_old"
+		root = "/var/www"
+		redirect = "./demo/www"					
+
+	[[http.server]]
+	listen_port = 4242
+	listen_addr = ""
+	root = "./demo/www"
+	index = "index.html"

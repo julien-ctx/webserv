@@ -20,7 +20,7 @@ namespace   TOML
         typedef float					 type_float;
         typedef bool					 type_bool;
         typedef std::string				 type_string;
-        typedef std::vector<TOML::value*> type_array;
+        typedef std::vector<TOML::value> type_array;
         typedef std::tm					 type_date_time;
 
 		
