@@ -67,15 +67,15 @@ namespace TOML
 		reverse_iterator	rbegin() { return this->_hash_tables.rbegin();}
 		reverse_iterator	rend() { return this->_hash_tables.rend();}
 		//  to do private
-		private:
+		public:
 		//insertion of new values
 		// insertion of int/bool/float
 		void	insert(type_string key, type_string val);
 		void	insert_array(type_string key, type_string str);
 		void	insert_table(type_string key, bool is_array);
+		private:
 		//parse
 		void	begin_parse(type_string config_file);
-		// remttre le & a str?
 		void	parse_line(type_string str, size_t line_nbr);
 		bool	is_hexa(char c);
 		bool	is_lower(char c);
@@ -106,8 +106,8 @@ namespace TOML
 		float						char_to_int(char c);
 		void						child_correct_parent(value::type_array to_change, value::type_array changer);
 		type_table					new_table(type_string key, bool	has_array);
+		public:
 		type_string					adding_here(type_string table_key);
-		type_string					remove_here(type_string table_key, type_string table_parent);
 
 		public:
 		//searching

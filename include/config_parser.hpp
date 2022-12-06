@@ -12,6 +12,7 @@
 using namespace std;
 
 //functions
+void	        exist_good_type(TOML::parse *pars, string key, TOML::types t, bool b);
 void			verif_folder_file(string path);
 TOML::parse		config_parsing(const char * path);
 
@@ -27,6 +28,27 @@ class ConfigError : public std::exception
     const char *	what(void) const throw()
     {
         return _msg;
+    }
+};
+
+class TypeError : public std::exception
+{
+    private:
+     std::string _msg;
+
+    public:
+    TypeError(const char *msg, const string key) : _msg(msg)
+    {
+        std::stringstream ss;
+
+        ss << "The key " << key;
+        ss << msg;
+        _msg = ss.str();
+    }
+    virtual ~TypeError() _NOEXCEPT {}
+    const char *	what(void) const throw()
+    {
+        return _msg.c_str();
     }
 };
 
