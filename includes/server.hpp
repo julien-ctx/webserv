@@ -28,6 +28,8 @@ private:
     int _clients[SOMAXCONN];
 
     std::string _full_rq;
+    size_t _received_len;
+    size_t _full_len;
 
 public:
 	/* ----- Constructors ----- */
@@ -48,6 +50,8 @@ public:
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
+        _received_len = 0;
+        _full_len = 0;
     }
 
     ~Server() {}
@@ -138,7 +142,7 @@ public:
     Request request_handler(int &i)
     {
         Request requete;
-        static size_t curr_len = 0;
+        
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
@@ -147,20 +151,24 @@ public:
         else
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf);
+
         requete.string_to_request(_buf);
-        curr_len = requete._length != 0 ? curr_len + requete._length : 0;
+        _received_len += requete.GetBodyLength();
+        if (requete._length) _full_len = requete._length;
+
         std::cout << MAGENTA << requete._length << std::endl;
         std::cout << YELLOW << this->_full_rq << std::endl << RESET;
-        if (_full_rq.size() == requete._length && requete.GetMethod() == POST)
+
+        if (((_received_len == _full_len) && requete.GetMethod() == POST)
+            || (requete.GetMethod() == GET))
         {
+            requete.string_to_request(_full_rq);
             _full_rq = "";
             _rq = true;
+            _full_len = 0;
+            _received_len = 0;
         }
-        else if (requete.GetMethod() == GET)
-        {
-            _full_rq = "";
-            _rq = true;
-        }
+
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;

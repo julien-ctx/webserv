@@ -60,7 +60,7 @@ public:
 		else if (!id)
 		{
 			pipe(in);
-			write(in[1], rq.GetBody().c_str(), rq.GetBodyLenght());
+			write(in[1], rq.GetBody().c_str(), rq.GetBodyLength());
 			close(in[1]);
 
 			dup2(in[0], STDIN_FILENO);

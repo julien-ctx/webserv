@@ -194,7 +194,7 @@ std::string GetBody() const
 std::map<std::string, std::string> GetHeaders() const
 { return _headers; }
 
-size_t GetBodyLenght() const
+size_t GetBodyLength() const
 { return _body.length(); }
 
 
