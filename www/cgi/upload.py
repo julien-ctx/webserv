@@ -1,4 +1,9 @@
 #!/usr/local/bin/python3
-import cgi
+import sys
 
-form = cgi.FieldStorage()
+stdin = []
+
+for line in sys.stdin:
+	stdin.append(line)
+
+print(stdin)

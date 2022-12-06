@@ -152,21 +152,17 @@ public:
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf);
 
-        requete.string_to_request(_buf);
-        _received_len += requete.GetBodyLength();
-        if (requete._length) _full_len = requete._length;
-
-        std::cout << MAGENTA << requete._length << std::endl;
         std::cout << YELLOW << this->_full_rq << std::endl << RESET;
 
-        if (((_received_len == _full_len) && requete.GetMethod() == POST)
+        requete.string_to_request(_full_rq);
+        if (requete._length)
+            _full_len = requete._length;
+        if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
             || (requete.GetMethod() == GET))
         {
-            requete.string_to_request(_full_rq);
             _full_rq = "";
             _rq = true;
             _full_len = 0;
-            _received_len = 0;
         }
 
         std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;

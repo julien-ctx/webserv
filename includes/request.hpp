@@ -201,7 +201,7 @@ size_t GetBodyLength() const
 friend std::string to_string(const Request& request); // --> a coder
 
 // transforme une string en une requete
-void string_to_request(const std::string& request_string)
+void string_to_request(const std::string request_string)
 {
     std::string         start_line, header_lines, message_body;
     std::istringstream  iss;                          // voir https://www.youtube.com/watch?v=KUx9YfHkllk pour plus d'explications
