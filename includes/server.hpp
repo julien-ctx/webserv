@@ -171,7 +171,7 @@ public:
     }
 
     // Sends the response and sets the socket ready to read the request again
-    void response_handler(int &i, Request requete)
+    Response response_handler(int &i, Request requete)
     {
         size_t sent = 0;
         CGI cgi(requete.GetUri().GetPath());
@@ -198,12 +198,13 @@ public:
         _rq = false;
         delete_client(this->_ev_list[i].ident);
         EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        return rep;
     }
 
     void launch()
     {
-        Request requete;
-
+        Request     requete;
+        Response    rep;
         // Registers interest in READ on server's fd and add the event to kqueue.
         EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
@@ -214,16 +215,16 @@ public:
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
-                if (this->_ev_list[i].flags & EV_CLEAR && _rq)
-                    exit_error("Timeout"); // Send correct error here
-                else if (this->_ev_list[i].flags & EV_EOF)
+                if (this->_ev_list[i].flags & EV_EOF)
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
-                    response_handler(i, requete);
+                    rep = response_handler(i, requete);
+                else if (this->_ev_list[i].flags & EV_CLEAR && _rq)
+                    rep.send_error(408, _ev_list, i);
                 kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
         }
