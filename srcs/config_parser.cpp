@@ -3,6 +3,58 @@
 
 using namespace std;
 
+//limits values
+//int
+void	limits_value_int(__int64_t min, __int64_t max, string key, __int64_t actual_value)
+{
+	if (actual_value < min || actual_value > max)
+		throw (" has an invalid value", key);
+}
+
+//str
+void	limits_value_str(vector<string> vec,string key, string actual_value)
+{
+	for (size_t i = 0; i < vec.size(); i++)
+	{
+		if (!vec[i].compare(actual_value))
+			return ;
+	}
+		throw (" has an invalid value", key);
+}
+
+void	adress_parse(string value)
+{
+	size_t begin = 0;
+	size_t dot_counter = 0;
+	size_t nbr_counter = 0;
+	size_t adress_counter = 0;
+	if (value[0] == '.' || value[value.size() -1] == '.')
+		throw (" has an invalid value", string("adress"));
+	for (size_t i = 0; i < value.size(); i++)
+	{
+		if ((value[i] > '9' || value[i] < '0') && value[i] != '.')
+			throw (" has an invalid value", string("adress"));
+		if (value[i] == '.')
+		{
+			dot_counter++;
+			adress_counter++;
+			if (adress_counter > 4 || dot_counter > 1 || ft_atoi(value.substr(begin, nbr_counter)) > 255)
+				throw (" has an invalid value", string("adress"));
+			nbr_counter = 0;
+			begin = i + 1;
+		}
+		else
+		{
+			nbr_counter++;
+			if (nbr_counter > 3)
+				throw (" has an invalid value", string("adress"));
+			dot_counter = 0;
+		}
+	}
+	if (adress_counter != 3)
+		throw (" has an invalid value", string("adress"));
+	
+}
 //verify if value exist and if dosn't add it with a default value
 //tables
 void	exist_good_type(TOML::parse *pars, string key, TOML::types t, bool b, string str)
@@ -38,8 +90,13 @@ void	verif_content(TOML::parse *pars)
 	{
 		pars->_here = "server";
 		pars->adding_here(to_string(i));
+
 		exist_good_type(pars, string("port"), TOML::types::T_int, false, string("4242"));
+		limits_value_int(0, 65535, string("port"), pars->at_key_parent(string("port"), pars->_here)->_int);
+
 		exist_good_type(pars, string("adress"), TOML::types::T_string, false, string("\"0.0.0.0\""));
+		adress_parse(pars->at_key_parent(string("adress"), pars->_here)->_string);
+
 		vec_port.push_back(pars->at_key_parent(string("port"), pars->_here)->_int);
 		vec_addr.push_back(pars->at_key_parent(string("adress"), pars->_here)->_string);
 		for (size_t i = 0; i < vec_port.size(); i++)
@@ -55,8 +112,9 @@ void	verif_content(TOML::parse *pars)
 		}
 		exist_good_type(pars, string("server_name"), TOML::types::T_array, false, string("[\"\"]"));
 		exist_good_type(pars, string("body_size"), TOML::types::T_int, false, string("1048576"));
+		limits_value_int(0, 1048576, string("body_size"), pars->at_key_parent(string("body_size"), pars->_here)->_int);
 		// we'll see for error pages
-		exist_good_type(pars, string("location"), TOML::types::T_table, false, string(""));
+		// exist_good_type(pars, string("location"), TOML::types::T_table, false, string(""));
 	}
 	
 

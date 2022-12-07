@@ -8,5 +8,6 @@
 using namespace std;
 
 vector<string>  ft_split(string str, string occ);
+int             ft_atoi(string str);
 
 #endif
