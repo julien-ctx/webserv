@@ -52,6 +52,7 @@ public:
 	{
 		int out[2];
 		int in[2];
+		std::cout << "I am reading" << std::endl;
 		if (pipe(out) < 0)
 			exit_error("pipe function failed");
 		int id = fork();

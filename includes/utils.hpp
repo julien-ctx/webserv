@@ -19,6 +19,7 @@
 #include <map>
 
 #define BUFFER_SIZE 30000
+#define TIMEOUT 1000
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */

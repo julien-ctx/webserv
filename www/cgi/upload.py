@@ -6,10 +6,12 @@ if __name__ == "__main__":
 	stdin = ""
 	for line in sys.stdin:
 		stdin += line
+	if not stdin:
+		exit()
 	boundary = stdin.split('\n')[0]
 	stdin = stdin.split(boundary)
 	content = ""
-	msg = "File uploaded"
+	msg = "Invalid submission"
 
 	for block in stdin:
 		if "filename=" in block:
@@ -23,12 +25,12 @@ if __name__ == "__main__":
 			if content and filename:
 				if not os.path.isdir("./www/cgi/uploads/"):
 					msg = "Upload directory doesn't exists"
-				if (os.path.isfile("./www/cgi/uploads/" + filename)):
-					msg = "File already exists!"
-				with open("./www/cgi/uploads/" + filename, 'w') as file:
-					file.write(content)
-			else:
-				msg = "Invalid submission"
+				elif (os.path.isfile("./www/cgi/uploads/" + filename)):
+					msg = "File already exists"
+				else:
+					with open("./www/cgi/uploads/" + filename, 'w') as file:
+						file.write(content)
+					msg = "File uploaded"
 
 	html = """
 	<!DOCTYPE html>

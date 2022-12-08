@@ -135,7 +135,7 @@ public:
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
         EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
         kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
-        EV_SET(&this->_ev_set, client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, 5000, NULL);
+        EV_SET(&this->_ev_set, client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
     }
 
     // Receives request and sets the client ready to send the response
@@ -152,21 +152,22 @@ public:
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf);
 
-        std::cout << YELLOW << this->_full_rq << std::endl << RESET;
-
         requete.string_to_request(_full_rq);
         if (requete._length)
             _full_len = requete._length;
+            
+        std::cout << YELLOW << this->_buf << std::endl << RESET;
+    
         if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
             || (requete.GetMethod() == GET))
         {
+            std::cout << YELLOW << this->_full_rq << std::endl << RESET;
             _full_rq = "";
             _rq = true;
             _full_len = 0;
+            std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+            EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         }
-
-        std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         return requete;
     }
 
@@ -223,7 +224,7 @@ public:
                     requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     rep = response_handler(i, requete);
-                else if (this->_ev_list[i].flags & EV_CLEAR && _rq)
+                else if (this->_ev_list[i].flags & EV_CLEAR)
                     rep.send_error(408, _ev_list, i);
                 kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
