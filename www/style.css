@@ -44,6 +44,15 @@ h3
 	text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
 }
 
+p
+{
+	font-size: 100%;
+	text-align: center;
+	font-family: 'Courier New', Courier, monospace;
+	color:rgb(226, 226, 226);
+	text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
+}
+
 label
 {
     width: 120px;

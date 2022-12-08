@@ -224,7 +224,7 @@ public:
                     requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     rep = response_handler(i, requete);
-                else if (this->_ev_list[i].flags & EV_CLEAR)
+                else if (this->_ev_list[i].flags & EV_CLEAR && _rq)
                     rep.send_error(408, _ev_list, i);
                 kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
             }
