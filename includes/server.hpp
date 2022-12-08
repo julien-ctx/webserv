@@ -22,13 +22,12 @@ private:
 
     int _kq;
     char _buf[BUFFER_SIZE];
-    struct kevent _ev_set;
+    struct kevent _ev_set[EVENTS_NUM];
     struct kevent _ev_list[SOMAXCONN];
     socklen_t _socklen;
     int _clients[SOMAXCONN];
 
     std::string _full_rq;
-    size_t _received_len;
     size_t _full_len;
 
 public:
@@ -50,7 +49,6 @@ public:
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
-        _received_len = 0;
         _full_len = 0;
     }
 
@@ -133,9 +131,8 @@ public:
             return;
         }
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
-        EV_SET(&this->_ev_set, client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-        kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
-        EV_SET(&this->_ev_set, client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
+        EV_SET(&this->_ev_set[C_READ], client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        EV_SET(&this->_ev_set[S_READ], this->_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
     }
 
     // Receives request and sets the client ready to send the response
@@ -156,8 +153,8 @@ public:
         if (requete._length)
             _full_len = requete._length;
             
-        std::cout << YELLOW << this->_buf << std::endl << RESET;
-    
+        std::cout << MAGENTA << this->_buf << std::endl << RESET;
+        
         if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
             || (requete.GetMethod() == GET))
         {
@@ -166,7 +163,7 @@ public:
             _rq = true;
             _full_len = 0;
             std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-            EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+            EV_SET(&this->_ev_set[C_WRITE], this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         }
         return requete;
     }
@@ -198,7 +195,7 @@ public:
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         _rq = false;
         delete_client(this->_ev_list[i].ident);
-        EV_SET(&this->_ev_set, this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        EV_SET(&this->_ev_set[C_WRITE], this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
         return rep;
     }
 
@@ -207,12 +204,13 @@ public:
         Request     requete;
         Response    rep;
         // Registers interest in READ on server's fd and add the event to kqueue.
-        EV_SET(&this->_ev_set, this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-        kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
         
+        EV_SET(&this->_ev_set[S_READ], this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+
         while (1)
         {
             // Waits for an event to occur and return number of events catched
+            kevent(this->_kq, this->_ev_set, EVENTS_NUM, NULL, 0, NULL);
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             for (int i = 0; i < event_nb; i++)
             {
@@ -220,13 +218,13 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
+                else if (this->_ev_list[i].flags & EV_CLEAR)
+                    rep.send_error(408, _ev_list, i);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     rep = response_handler(i, requete);
-                else if (this->_ev_list[i].flags & EV_CLEAR && _rq)
-                    rep.send_error(408, _ev_list, i);
-                kevent(this->_kq, &this->_ev_set, 1, NULL, 0, NULL);
+                kevent(this->_kq, this->_ev_set, EVENTS_NUM, NULL, 0, NULL);
             }
         }
     }

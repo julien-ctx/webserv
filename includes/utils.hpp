@@ -20,6 +20,7 @@
 
 #define BUFFER_SIZE 30000
 #define TIMEOUT 1000
+#define EVENTS_NUM 4
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */
@@ -47,3 +48,9 @@ enum HttpStatusCode {
     InternalServerError = 500,
 };
 
+enum EventType {
+    S_READ,
+    C_READ,
+    C_WRITE,
+    C_TIMER
+};
