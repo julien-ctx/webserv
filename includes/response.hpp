@@ -138,6 +138,13 @@ std::string mime_parser()
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
 
+void set_error(int status, std::string &content)
+	{
+		size_t start = 0;
+		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
+			content.replace(start, 10, std::to_string(status));
+	}
+
 	bool send_error(int status, struct kevent *ev_list , int i)
 	{
 		std::string 		file_name;
@@ -146,20 +153,22 @@ std::string mime_parser()
 		std::stringstream 	file_n;
 		std::stringstream buffer;
 
-		file_n << "./www/" << status << ".html";
-		file_name = file_n.str();
+
+		file_name = "www/error.html";
 		file.open(file_name);
 		if (!file)
 			std::cout << RED << "Cannot respond with " << status << RESET;
 		buffer << file.rdbuf();
+		std::string file_content = buffer.str();
+		std::string ns = file_content;
+		set_error(status, file_content);
 		s << _version << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
 		s.clear();
-		_content += buffer.str();
+		_content += file_content;
 		file.close();
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
-
 };

@@ -22,6 +22,8 @@
 #define TIMEOUT 1000
 #define EVENTS_NUM 4
 
+#define DEBUG(x) std::cout << CYAN << x << std::endl << RESET;
+
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */
 #define RED     "\033[1m\033[31m"      /* Bold Red */
