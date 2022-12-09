@@ -138,7 +138,7 @@ std::string mime_parser()
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
 
-void set_error(int status, std::string &content)
+	void set_error(int status, std::string &content)
 	{
 		size_t start = 0;
 		while ((start = content.find("*ERROR_NO*")) != std::string::npos)

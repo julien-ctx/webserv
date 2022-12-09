@@ -22,7 +22,7 @@ private:
 
     int _kq;
     char _buf[BUFFER_SIZE];
-    struct kevent _ev_set[EVENTS_NUM];
+    std::vector<struct kevent> _ev_set;
     struct kevent _ev_list[SOMAXCONN];
     socklen_t _socklen;
     int _clients[SOMAXCONN];
@@ -50,6 +50,7 @@ public:
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
         _full_len = 0;
+        _ev_set.resize(1);
     }
 
     ~Server() {}
@@ -131,8 +132,9 @@ public:
             return;
         }
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
-        EV_SET(&this->_ev_set[C_READ], client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-        EV_SET(&this->_ev_set[S_READ], this->_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
+        _ev_set.resize(_ev_set.size() + 2);
+        EV_SET(&*(this->_ev_set.end() - 2), client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
     }
 
     // Receives request and sets the client ready to send the response
@@ -153,8 +155,6 @@ public:
         if (requete._length)
             _full_len = requete._length;
             
-        std::cout << MAGENTA << this->_buf << std::endl << RESET;
-        
         if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
             || (requete.GetMethod() == GET))
         {
@@ -163,7 +163,8 @@ public:
             _rq = true;
             _full_len = 0;
             std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
-            EV_SET(&this->_ev_set[C_WRITE], this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+            _ev_set.resize(_ev_set.size() + 1);
+            EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         }
         return requete;
     }
@@ -195,7 +196,8 @@ public:
             std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         _rq = false;
         delete_client(this->_ev_list[i].ident);
-        EV_SET(&this->_ev_set[C_WRITE], this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        _ev_set.resize(_ev_set.size() + 1);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
         return rep;
     }
 
@@ -203,15 +205,16 @@ public:
     {
         Request     requete;
         Response    rep;
-        // Registers interest in READ on server's fd and add the event to kqueue.
         
-        EV_SET(&this->_ev_set[S_READ], this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        // Registers interest in READ on server's fd and add the event to kqueue.
+        EV_SET(&_ev_set.back(), this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 
         while (1)
         {
+            kevent(this->_kq, _ev_set.data(), _ev_set.size(), NULL, 0, NULL);
             // Waits for an event to occur and return number of events catched
-            kevent(this->_kq, this->_ev_set, EVENTS_NUM, NULL, 0, NULL);
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
+            _ev_set.clear();
             for (int i = 0; i < event_nb; i++)
             {
                 if (this->_ev_list[i].flags & EV_EOF)
@@ -219,12 +222,17 @@ public:
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].flags & EV_CLEAR)
+                {
+                    // exit_error("timeout");
+                    _ev_set.resize(_ev_set.size() + 1);
+                    EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+                    // This is causing a segfault. Add exit error to remove the seg fault
                     rep.send_error(408, _ev_list, i);
+                }
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     rep = response_handler(i, requete);
-                kevent(this->_kq, this->_ev_set, EVENTS_NUM, NULL, 0, NULL);
             }
         }
     }

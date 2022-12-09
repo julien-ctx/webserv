@@ -19,8 +19,7 @@
 #include <map>
 
 #define BUFFER_SIZE 30000
-#define TIMEOUT 1000
-#define EVENTS_NUM 4
+#define TIMEOUT 7000
 
 #define DEBUG(x) std::cout << CYAN << x << std::endl << RESET;
 
@@ -48,11 +47,4 @@ enum HttpStatusCode {
     OK = 200,
     BadRequest = 400,
     InternalServerError = 500,
-};
-
-enum EventType {
-    S_READ,
-    C_READ,
-    C_WRITE,
-    C_TIMER
 };
