@@ -63,6 +63,7 @@ public:
 			write(in[1], rq.GetBody().c_str(), rq.GetBodyLength());
 			close(in[1]);
 
+			close(out[0]);
 			dup2(in[0], STDIN_FILENO);
 			close(in[0]);
 			dup2(out[1], STDOUT_FILENO);
@@ -81,10 +82,16 @@ public:
 			cmd[0] = const_cast<char *>(exec.c_str());
 			cmd[1] = const_cast<char *>(this->_path.c_str());
 			cmd[2] = NULL;
+
 			for (int i = 0; environ[i]; i++)
 				_env.push_back(std::string(environ[i]));
+			if (rq.GetHeaders().count("Content-Type"))
+				_env.push_back("CONTENT_TYPE=" + rq.GetHeaders().at("Content-Type"));
+			if (rq.GetHeaders().count("Content-Length"))
+				_env.push_back("CONTENT_LENGTH=" + rq.GetHeaders().at("Content-Length"));
 			_env.push_back("QUERY_STRING=");
-			_env.push_back("PATH_INFO=/");
+			_env.push_back("SCRIPT_NAME=" + rq.GetUri().GetPath());
+			
 			switch (rq.GetMethod())
 			{
 				case GET:
@@ -97,6 +104,7 @@ public:
 					_env.push_back("REQUEST_METHOD=DELETE");
 					break;
 			}
+
 			if (execve(cmd[0], cmd, getEnv()) < 0)
 				exit_error("Invalid CGI program");
 		}
