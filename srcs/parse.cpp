@@ -404,7 +404,7 @@ namespace TOML
             }
             return true;
         }
-		if (str.length() == 2 && (str.compare("\"\"") || str.compare("''")))
+		if (str.length() == 2 && (!str.compare("\"\"") || !str.compare("''")))
 			return true;
         return false;
     }

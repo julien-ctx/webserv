@@ -88,21 +88,26 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 using namespace TOML;
 int main(int ac, char **av)
 {
-	(void)ac;
-	(void)av;
+	// (void)ac;
+	// (void)av;
+	parse yo;
 	try
 	{
-		parse	yo("config/default.TOML");
+		if (ac < 2)
+			yo = config_parsing("config/default.TOML");
+		else
+			yo = config_parsing(av[1]);
 
-		for (size_t i = 0; i < yo._hash_tables.size(); i++)
-		{
-			std::cout << yo._hash_tables[i];
-		}
 	}
 	catch( const std::exception & e ) {
-        std::cerr << e.what() << "e" << std::endl;
+        std::cerr << e.what() << "! error" << std::endl;
 		exit (1);
     }
+
+	for (size_t i = 0; i < yo._hash_tables.size(); i++)
+	{
+		std::cout << yo._hash_tables[i];
+	}
 	// std::ifstream	file("config/default.TOML");
 	// std::string bruh;
 	// // size_t	i= 0;

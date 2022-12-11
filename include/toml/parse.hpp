@@ -41,6 +41,8 @@ namespace TOML
 
 		public:
 		//constructors / destructors
+
+		parse(): _root("", false), _hash_tables(type_array()), _here(_root._key){}
 		parse(type_string config_file): _root("", false), _hash_tables(type_array()), _here(_root._key)
 		{
 			begin_parse(config_file);
@@ -48,7 +50,7 @@ namespace TOML
 		~parse() {}
 
 		//operators
-		TOML::parse	operator=(TOML::parse &copy)
+		TOML::parse	operator=(const TOML::parse &copy)
 		{
 			this->_hash_tables.clear();
 			for (size_t i = 0; i < copy._hash_tables.size(); i++)
