@@ -154,6 +154,7 @@ void	verif_content(TOML::parse *pars)
 	//to see with others
 	cgi_ex.push_back(string("py"));
 	cgi_ex.push_back(string("sh"));
+	cgi_ex.push_back(string("pl"));
 	pars->_here = string("");
 	exist_good_type(pars, string("server"), TOML::T_table, true,string(""));
 	point = pars->at_key_parent(string("server"), string(""));
@@ -230,17 +231,14 @@ void	verif_content(TOML::parse *pars)
 			pars->_here = string("server.") + to_string(i) + string(".location");
 			pars->adding_here(to_string(j));
 			exist_good_type(pars, string("route"), TOML::T_string, true, string("\"/\""));
-			//to see with the others
-			exist_good_type(pars, string("root"), TOML::T_string, true, string("\"/var/www\""));
-			//to see with the others
+			exist_good_type(pars, string("root"), TOML::T_string, true, string("\"/www\""));
 			exist_good_type(pars, string("index"), TOML::T_string, true, string("\"index.html\""));
 			exist_good_type(pars, string("auto_index"), TOML::T_bool, true, string("false"));
 			exist_good_type(pars, string("uploadable"), TOML::T_bool, true, string("false"));
-			//to see with the others
-			exist_good_type(pars, string("cgi_dir"), TOML::T_string, true, string("\"var/cgi\""));
+			exist_good_type(pars, string("cgi_dir"), TOML::T_string, true, string("\"/www/cgi\""));
 
 			//to see with the others
-			exist_good_type(pars, string("cgi_extension"), TOML::T_array, true, string("[\"py\", \"sh\"]"));
+			exist_good_type(pars, string("cgi_extension"), TOML::T_array, true, string("[\"py\", \"sh\", \"pl\"]"));
 			for (size_t k = 0; k < pars->at_key_parent(string("cgi_extension"), pars->_here)->_array.size(); k++)
 			{
 				limits_value_str(cgi_ex, pars->at_key_parent(to_string(k), (pars->_here + string(".cgi_extension")))->_key,

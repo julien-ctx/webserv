@@ -100,10 +100,11 @@ int main(int ac, char **av)
 
 	}
 	catch( const std::exception & e ) {
-        std::cerr << e.what() << "! error" << std::endl;
-		exit (1);
+        std::cerr << "Config error : " << e.what() << std::endl;
+		return (1);
     }
 
+	yo
 	for (size_t i = 0; i < yo._hash_tables.size(); i++)
 	{
 		std::cout << yo._hash_tables[i];
