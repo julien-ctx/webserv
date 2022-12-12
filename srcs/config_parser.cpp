@@ -26,24 +26,24 @@ void	limits_value_str(vector<string> vec,string key, string actual_value)
 		throw TypeError(" has an invalid value", key);
 }
 
-void	adress_parse(string value)
+void	address_parse(string value)
 {
 	size_t begin = 0;
 	size_t dot_counter = 0;
 	size_t nbr_counter = 0;
-	size_t adress_counter = 0;
+	size_t address_counter = 0;
 	if (value[0] == '.' || value[value.size() -1] == '.')
-		throw TypeError(" has an invalid value", string("adress"));
+		throw TypeError(" has an invalid value", string("address"));
 	for (size_t i = 0; i < value.size(); i++)
 	{
 		if ((value[i] > '9' || value[i] < '0') && value[i] != '.')
-			throw TypeError(" has an invalid value", string("adress"));
+			throw TypeError(" has an invalid value", string("address"));
 		if (value[i] == '.')
 		{
 			dot_counter++;
-			adress_counter++;
-			if (adress_counter > 4 || dot_counter > 1 || ft_atoi(value.substr(begin, nbr_counter)) > 255)
-				throw TypeError(" has an invalid value", string("adress"));
+			address_counter++;
+			if (address_counter > 4 || dot_counter > 1 || ft_atoi(value.substr(begin, nbr_counter)) > 255)
+				throw TypeError(" has an invalid value", string("address"));
 			nbr_counter = 0;
 			begin = i + 1;
 		}
@@ -51,12 +51,12 @@ void	adress_parse(string value)
 		{
 			nbr_counter++;
 			if (nbr_counter > 3)
-				throw TypeError(" has an invalid value", string("adress"));
+				throw TypeError(" has an invalid value", string("address"));
 			dot_counter = 0;
 		}
 	}
-	if (adress_counter != 3)
-		throw TypeError(" has an invalid value", string("adress"));
+	if (address_counter != 3)
+		throw TypeError(" has an invalid value", string("address"));
 	
 }
 //verify if value exist and if dosn't add it with a default value
@@ -120,12 +120,12 @@ void	verif_content(TOML::parse *pars)
 		// bruh = *(pars->at_key_parent(string("port"), pars->_here));
 		// std::cout << bruh << std::endl;
 
-		exist_good_type(pars, string("adress"), TOML::T_string, false, string("\"0.0.0.0\""));
-		adress_parse(pars->at_key_parent(string("adress"), pars->_here)->_string);
-		// bruh = *(pars->at_key_parent(string("adress"), pars->_here));
+		exist_good_type(pars, string("address"), TOML::T_string, false, string("\"0.0.0.0\""));
+		address_parse(pars->at_key_parent(string("address"), pars->_here)->_string);
+		// bruh = *(pars->at_key_parent(string("address"), pars->_here));
 		// std::cout << bruh << std::endl;
 
-		vec_port_addr.push_back(pair<int, string>(pars->at_key_parent(string("port"), pars->_here)->_int, pars->at_key_parent(string("adress"), pars->_here)->_string));
+		vec_port_addr.push_back(pair<int, string>(pars->at_key_parent(string("port"), pars->_here)->_int, pars->at_key_parent(string("address"), pars->_here)->_string));
 		std::cout << "go" << std::endl;
 		if (!vec_first.size())
 		{

@@ -5,6 +5,9 @@
 # include <exception>
 # include "../includes/toml/parse.hpp"
 # include "../includes/config_parser.hpp"
+# include "../includes/server.hpp"
+# include "../includes/response.hpp"
+using namespace TOML;
 
 
 std::ostream& operator<< (std::ostream& o, TOML::value& val)
@@ -62,10 +65,6 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 	return (o);
 }
 
-using namespace TOML;
-#include "../includes/server.hpp"
-#include "../includes/response.hpp"
-
 void *serv_thread(void *server)
 {
 	Response resp;
@@ -98,14 +97,32 @@ int main(int ac, char **av)
 	for (size_t i = 0; i < pars._hash_tables.size(); i++)
 		std::cout << pars._hash_tables[i];
 
-	pthread_t s1;
-	// pthread_t s2;
+	// TOML::parse::pointer point = pars.at_key_parent(string("server"), "");
+	// __int64_t port;
+	// string server_name;
+	// for (size_t i = 0; i < point->_array.size(); i++)
+	// {
+	// 	port = pars.at_key_parent(string("port"), string("server.") + to_string(i))->_int;
+	// 	port = pars.at_key_parent(string("server_name"), string("server.") + to_string(i))->_int;
+		
+	// }
 
-	Server serv1(4242);
-	// Server serv2(4343);
+	try
+	{
+		pthread_t s1;
+		// pthread_t s2;
 
-	pthread_create(&s1, NULL, serv_thread, &serv1);
-	// pthread_create(&s2, NULL, serv_thread, &serv2);
-	while (1);
+		Server serv1(4242);
+		// Server serv2(4343);
+
+		pthread_create(&s1, NULL, serv_thread, &serv1);
+		// pthread_create(&s2, NULL, serv_thread, &serv2);
+		while (1);
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "Server error : " << e.what() << '\n';
+		return 1;
+	}
+	return 0;
 }
-

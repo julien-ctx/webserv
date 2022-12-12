@@ -1,0 +1,22 @@
+[[server]]
+    port = 8080
+    address = "127.0.0.1"
+    server_name = ["localhost"]
+    body_size = 1048576
+    [[server.location]]
+        route = "/"
+        root = "/www"
+        index = "index.html"
+        allowed_methods = ["POST", "GET"]
+    [[server.location]]
+        route = "/upload"
+        cgi_dir = "/www/cgi/upload"
+        uploadable = true
+        allowed_methods = ["POST", "GET", "DELETE"]
+    [[server.location]]
+        route = "/cgi"
+        root = "/www"
+        cgi_extension = ["py","sh","pl"]
+    [[server.location]]
+        route = "/errors_index"
+        root = "/www"
