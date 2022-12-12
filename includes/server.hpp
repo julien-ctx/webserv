@@ -223,7 +223,7 @@ public:
                     accepter();
                 else if (this->_ev_list[i].flags & EV_CLEAR)
                 {
-                    exit_error("timeout");
+                    //exit_error("timeout");
                     _ev_set.resize(_ev_set.size() + 1);
                     EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
                     // This is causing a segfault. Add exit error to remove the seg fault
