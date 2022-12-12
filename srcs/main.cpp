@@ -3,31 +3,8 @@
 # include <fstream>
 # include <cstring>
 # include <exception>
-# include "../include/toml/parse.hpp"
-# include "../include/config_parser.hpp"
-class b
-{
-private:
-	std::string s;
-public:
-	b() : s("bruh"){}
-	~b()
-	{
-		std::cout << "issou" << std::endl;
-	}
-};
-
-class a
-{
-	private:
-		b b;
-	public:
-		a() : b() {}
-		~a()
-		{
-			std::cout << "Daft punk" << std::endl;
-		}
-};
+# include "../includes/toml/parse.hpp"
+# include "../includes/config_parser.hpp"
 
 
 std::ostream& operator<< (std::ostream& o, TOML::value& val)
@@ -104,23 +81,22 @@ void *serv_thread(void *server)
 int main(int ac, char **av)
 {
 
-	parse yo;
+	parse pars;
 	try
 	{
 		if (ac < 2)
-			yo = config_parsing("config/default.TOML");
+			pars = config_parsing("config/default.TOML");
 		else
-			yo = config_parsing(av[1]);
+			pars = config_parsing(av[1]);
 
 	}
-	catch( const std::exception & e ) {
+	catch (const std::exception & e)
+	{
         std::cerr << "Config error : " << e.what() << std::endl;
 		return (1);
     }
-	for (size_t i = 0; i < yo._hash_tables.size(); i++)
-	{
-		std::cout << yo._hash_tables[i];
-	}
+	for (size_t i = 0; i < pars._hash_tables.size(); i++)
+		std::cout << pars._hash_tables[i];
 
 	pthread_t s1;
 	// pthread_t s2;
@@ -131,9 +107,5 @@ int main(int ac, char **av)
 	pthread_create(&s1, NULL, serv_thread, &serv1);
 	// pthread_create(&s2, NULL, serv_thread, &serv2);
 	while (1);
-
-
-
-
 }
 
