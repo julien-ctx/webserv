@@ -126,7 +126,7 @@ void	verif_content(TOML::parse *pars)
 		// std::cout << bruh << std::endl;
 
 		vec_port_addr.push_back(pair<int, string>(pars->at_key_parent(string("port"), pars->_here)->_int, pars->at_key_parent(string("address"), pars->_here)->_string));
-		std::cout << "go" << std::endl;
+
 		if (!vec_first.size())
 		{
 			vec_first.push_back(pair<int, pair<int, string> >(i, vec_port_addr[vec_port_addr.size() - 1]));

@@ -94,29 +94,28 @@ int main(int ac, char **av)
         std::cerr << "Config error : " << e.what() << std::endl;
 		return (1);
     }
-	for (size_t i = 0; i < pars._hash_tables.size(); i++)
-		std::cout << pars._hash_tables[i];
+	// for (size_t i = 0; i < pars._hash_tables.size(); i++)
+	// 	std::cout << pars._hash_tables[i];
 
-	// TOML::parse::pointer point = pars.at_key_parent(string("server"), "");
-	// __int64_t port;
-	// string server_name;
-	// for (size_t i = 0; i < point->_array.size(); i++)
-	// {
-	// 	port = pars.at_key_parent(string("port"), string("server.") + to_string(i))->_int;
-	// 	port = pars.at_key_parent(string("server_name"), string("server.") + to_string(i))->_int;
-		
-	// }
-
+	TOML::parse::pointer point = pars.at_key_parent(string("server"), "");
+	__int64_t port;
+	string server_name;
+	for (size_t i = 0; i < point->_array.size(); i++)
+	{
+		port = pars.at_key_parent("port", "server." + to_string(i))->_int;
+		server_name = pars.at_key_parent("server_name", "server." + to_string(i))->_array[0]._string;
+	}
+	
 	try
 	{
-		pthread_t s1;
-		// pthread_t s2;
+		size_t serv_size = point->_array.size();	
+		pthread_t *threads = new pthread_t[serv_size];
 
-		Server serv1(4242);
-		// Server serv2(4343);
-
-		pthread_create(&s1, NULL, serv_thread, &serv1);
-		// pthread_create(&s2, NULL, serv_thread, &serv2);
+		for (size_t i = 0; i < serv_size; i++)
+		{
+			Server *serv = new Server(pars.at_key_parent("port", "server." + to_string(i))->_int);
+			pthread_create(&threads[i], NULL, serv_thread, serv);
+		}
 		while (1);
 	}
 	catch (const std::exception &e)
