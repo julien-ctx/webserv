@@ -45,6 +45,7 @@ public:
         // Data init
         _port = _config->at_key_parent("port", "server." + to_string(i))->_int;
 		_addr_name = _config->at_key_parent("address", "server." + to_string(i))->_string;
+
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
         _full_len = 0;

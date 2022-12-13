@@ -101,8 +101,15 @@ form
     text-decoration: underline;
 }
 
+div .home-button
+{
+    margin-top: 100px;
+}
+
 .home-button
 {
+    position: static;
+    margin: auto;
     width: 150px;
     height: 50px;
     cursor: pointer;
