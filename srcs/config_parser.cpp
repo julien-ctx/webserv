@@ -3,10 +3,6 @@
 
 using namespace std;
 
-
-
-
-
 //limits values
 //int
 void	limits_value_int(__int64_t min, __int64_t max, string key, __int64_t actual_value)

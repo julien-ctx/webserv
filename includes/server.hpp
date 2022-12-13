@@ -15,11 +15,14 @@
 class Server
 {
 private:
+    // Server values
     int _fd;
     struct sockaddr_in _addr;
     int _port;
-    bool _rq;
+    std::string _addr_name;
+    TOML::parse *_config;
 
+    // Event queue values
     int _kq;
     char _buf[BUFFER_SIZE];
     std::vector<struct kevent> _ev_set;
@@ -27,6 +30,8 @@ private:
     socklen_t _socklen;
     int _clients[SOMAXCONN];
 
+    // Request values
+    bool _rq;
     std::string _full_rq;
     size_t _full_len;
 
@@ -34,23 +39,27 @@ public:
 	/* ----- Constructors ----- */
     Server() {}
 
-    Server(int port) : _port(port)
+    Server(TOML::parse *pars, size_t &i) : _config(pars)
     {
+        // Data init
+        _port = pars->at_key_parent("port", "server." + to_string(i))->_int;
+		_addr_name = pars->at_key_parent("address", "server." + to_string(i))->_string;
+        std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
+        this->_rq = false;
+        _full_len = 0;
+        _ev_set.resize(1);
+
         // Creates the socket
         if ((this->_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
             exit_error("socket function failed");
         // Chooses IPv4
         this->_addr.sin_family = AF_INET;
         // Defines the port
-        this->_addr.sin_port = htons(port);
+        this->_addr.sin_port = htons(_port);
         // Chooses the local IP
-        this->_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        this->_addr.sin_addr.s_addr = inet_addr(_addr_name.c_str());
         this->_socklen = sizeof(this->_addr);
         std::memset(&this->_addr.sin_zero, 0, sizeof(this->_addr.sin_zero));
-        std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
-        this->_rq = false;
-        _full_len = 0;
-        _ev_set.resize(1);
     }
 
     ~Server() {}
@@ -111,7 +120,7 @@ public:
             exit_error("kqueue function failed");
         }
 
-        std::cout << BLUE << "[SERVER] " << "localhost:" + std::to_string(this->_port) << std::endl << RESET;
+        std::cout << BLUE << "[SERVER] " << _addr_name << ":" + std::to_string(this->_port) << std::endl << RESET;
         // Listens on server fd, with a 128 (SOMAXCONN) pending connexion maximum
         if (listen(this->_fd, SOMAXCONN) < 0)
         {
@@ -158,11 +167,11 @@ public:
         if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
             || (requete.GetMethod() == GET))
         {
-            std::cout << YELLOW << this->_full_rq << std::endl << RESET;
+            // std::cout << YELLOW << this->_full_rq << std::endl << RESET;
             _full_rq = "";
             _rq = true;
             _full_len = 0;
-            std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
+            // std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
             _ev_set.resize(_ev_set.size() + 1);
             EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         }
@@ -192,8 +201,8 @@ public:
                     rep.send_error(405, _ev_list, i);
             }
         }
-        if (sent > 0)
-            std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
+        // if (sent > 0)
+            // std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         _rq = false;
         delete_client(this->_ev_list[i].ident);
         _ev_set.resize(_ev_set.size() + 1);

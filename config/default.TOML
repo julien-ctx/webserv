@@ -22,8 +22,8 @@
         root = "/www"
 [[server]]
     port = 4242
-    address = "127.0.0.1"
-    server_name = ["127.0.0.1"]
+    address = "0.0.0.0"
+    server_name = ["test.com","test"]
     body_size = 1048576
     [[server.location]]
         route = "/"

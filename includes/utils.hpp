@@ -18,6 +18,9 @@
 #include <vector>
 #include <map>
 
+# include "../includes/toml/parse.hpp"
+# include "../includes/config_parser.hpp"
+
 #define BUFFER_SIZE 30000
 #define TIMEOUT 1000
 #define MAX_REQ_LEN 50000
