@@ -24,6 +24,7 @@
 #define BUFFER_SIZE 30000
 #define TIMEOUT 1000
 #define MAX_REQ_LEN 50000
+#define MAX_SERVERS 10
 
 #define DEBUG(x) std::cout << CYAN << x << std::endl << RESET;
 

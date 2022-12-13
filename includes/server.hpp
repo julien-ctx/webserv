@@ -47,11 +47,22 @@ public:
         std::string parent = "server." + std::to_string(i);
         _port = _config->at_key_parent("port", parent)->_int;
 		_addr_name = _config->at_key_parent("address", parent)->_string;
-        
-        size_t size = _config->at_key_parent("cgi_extension", parent + ".location.2")->_array.size();
+        size_t index;
+        size_t size = 0;
+        for (index = 0; ; index++)
+        {
+            TOML::parse::pointer ptr = _config->at_key_parent("route", parent + ".location." + std::to_string(index));
+            if (!ptr)
+                break;
+            if (ptr->_string == "/cgi")
+            {
+                size = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
+                break;
+            }
+        }
         for (size_t i = 0; i < size; i++)
-            _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location.2")->_array[i]._string);
-        
+            _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[i]._string);
+
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
         _full_len = 0;
