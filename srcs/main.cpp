@@ -99,6 +99,8 @@ int main(int ac, char **av)
 	try
 	{
 		size_t serv_size = point->_array.size();	
+		if (serv_size > 42)
+			exit_error("too much servers");
 		pthread_t *threads = new pthread_t[serv_size];
 
 		for (size_t i = 0; i < serv_size; i++)

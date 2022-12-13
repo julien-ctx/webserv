@@ -34,6 +34,7 @@ private:
     bool _rq;
     std::string _full_rq;
     size_t _full_len;
+    size_t _max_size;
 
 public:
 	/* ----- Constructors ----- */
@@ -42,11 +43,12 @@ public:
     Server(TOML::parse *pars, size_t &i) : _config(pars)
     {
         // Data init
-        _port = pars->at_key_parent("port", "server." + to_string(i))->_int;
-		_addr_name = pars->at_key_parent("address", "server." + to_string(i))->_string;
+        _port = _config->at_key_parent("port", "server." + to_string(i))->_int;
+		_addr_name = _config->at_key_parent("address", "server." + to_string(i))->_string;
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
         _full_len = 0;
+        _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
         _ev_set.resize(1);
 
         // Creates the socket
@@ -161,6 +163,11 @@ public:
         _full_rq += std::string(_buf);
 
         requete.string_to_request(_full_rq);
+        if (requete._length > _max_size)
+        {
+            EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+            return requete;
+        }
         if (requete._length)
             _full_len = requete._length;
             
@@ -191,7 +198,7 @@ public:
         }
         else
         {
-            if (cgi.isCGI(requete))
+            if (cgi.isCGI(requete, _config))
                 sent = cgi.execute(this->_ev_list[i].ident, requete);
             else
             {
@@ -208,6 +215,13 @@ public:
         _ev_set.resize(_ev_set.size() + 1);
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
         return rep;
+    }
+
+    void handle_timeout(int &i)
+    {
+        // exit_error("timeout");
+        _ev_set.resize(_ev_set.size() + 1);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
     }
 
     void launch()
@@ -231,13 +245,7 @@ public:
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].flags & EV_CLEAR)
-                {
-                    // exit_error("timeout");
-                    _ev_set.resize(_ev_set.size() + 1);
-                    EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-                    // This is causing a segfault. Add exit error to remove the seg fault
-                    rep.send_error(408, _ev_list, i);
-                }
+                    handle_timeout(i);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     requete = request_handler(i);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
