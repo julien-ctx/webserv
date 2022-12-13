@@ -21,6 +21,7 @@ private:
     int _port;
     std::string _addr_name;
     TOML::parse *_config;
+    std::vector<std::string> _cgi_ext;
 
     // Event queue values
     int _kq;
@@ -43,9 +44,14 @@ public:
     Server(TOML::parse *pars, size_t &i) : _config(pars)
     {
         // Data init
-        _port = _config->at_key_parent("port", "server." + to_string(i))->_int;
-		_addr_name = _config->at_key_parent("address", "server." + to_string(i))->_string;
-
+        std::string parent = "server." + std::to_string(i);
+        _port = _config->at_key_parent("port", parent)->_int;
+		_addr_name = _config->at_key_parent("address", parent)->_string;
+        
+        size_t size = _config->at_key_parent("cgi_extension", parent + ".location.2")->_array.size();
+        for (size_t i = 0; i < size; i++)
+            _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location.2")->_array[i]._string);
+        
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
         _full_len = 0;
@@ -175,11 +181,9 @@ public:
         if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
             || (requete.GetMethod() == GET))
         {
-            // std::cout << YELLOW << this->_full_rq << std::endl << RESET;
             _full_rq = "";
             _rq = true;
             _full_len = 0;
-            // std::cout << BLUE << "[SERVER] " << "request received" << std::endl << RESET;
             _ev_set.resize(_ev_set.size() + 1);
             EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         }
@@ -189,28 +193,25 @@ public:
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request requete)
     {
-        size_t sent = 0;
         CGI cgi(requete.GetUri().GetPath());
         Response rep(requete);
         if (rep._status != 0)
         {
-            sent = rep.send_error(requete._status, _ev_list, i);
+            rep.send_error(requete._status, _ev_list, i);
             rep._status = 0;
         }
         else
         {
-            if (cgi.isCGI(requete, _config))
-                sent = cgi.execute(this->_ev_list[i].ident, requete);
+            if (cgi.isCGI(requete, _cgi_ext))
+                cgi.execute(this->_ev_list[i].ident, requete);
             else
             {
                 if (requete._method == 0)
-                    sent = rep.methodGET(_ev_list, i);
+                    rep.methodGET(_ev_list, i);
                 if (requete._method > 2)
                     rep.send_error(405, _ev_list, i);
             }
         }
-        // if (sent > 0)
-            // std::cout << GREEN << "[CLIENT] " << "response received" << std::endl << RESET;
         _rq = false;
         delete_client(this->_ev_list[i].ident);
         _ev_set.resize(_ev_set.size() + 1);

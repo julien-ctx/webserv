@@ -38,7 +38,7 @@
     [[server.location]]
         route = "/cgi"
         root = "/www"
-        cgi_extension = ["py","sh","pl"]
+        cgi_extension = ["py", "pl", "sh"]
     [[server.location]]
         route = "/errors_index"
         root = "/www"

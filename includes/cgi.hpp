@@ -24,13 +24,11 @@ public:
 		return cmd;
 	}
 
-	bool isCGI(Request &request, TOML::parse *config)
+	bool isCGI(Request &request, std::vector<std::string> &ext)
 	{
-		(void)config;
 		std::string path = request.GetUri().GetPath();
-		if ((path.substr(path.find_last_of(".") + 1) == "py") ||
-			(path.substr(path.find_last_of(".") + 1) == "pl") ||
-			(path.substr(path.find_last_of(".") + 1) == "sh"))
+
+		if (std::find(ext.begin(), ext.end(), path.substr(path.find_last_of(".") + 1)) != ext.end())
 		{
 			std::ifstream file(this->_path);
 			if (file.fail())
