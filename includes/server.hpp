@@ -22,11 +22,17 @@ private:
     std::string _addr_name;
     TOML::parse *_config;
     std::vector<std::string> _cgi_ext;
+    std::string _cgi_dir;
     std::string upload_dir;
     int _loc_nb;
     bool _uploadable;
     std::string _index;
     std::string _root;
+    std::string _route;
+    std::vector<std::string> _methods;
+    std::string _error_page;
+    std::string _error_route;
+    std::string _error_root;
 
     // Event queue values
     int _kq;
@@ -48,37 +54,50 @@ public:
 
     Server(TOML::parse *pars, size_t &i) : _config(pars)
     {
-        // Data init
+        // Data config setup
         std::string parent = "server." + std::to_string(i);
         _port = _config->at_key_parent("port", parent)->_int;
 		_addr_name = _config->at_key_parent("address", parent)->_string;
-
-        // Count number of locations inside server
         _loc_nb = _config->at_key_parent("location", parent)->_array.size();
+        _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
+
         int index;
         for (index = 0; index < _loc_nb; index++)
         {
-            // TOML::parse::pointer ptr = _config->at_key_parent("index", parent + ".location." + std::to_string(index));
             TOML::parse::pointer ptr = _config->at_key_parent("index", parent + ".location." + std::to_string(index));
-            if (ptr)
+            if (ptr->_string.size())
             {
-                if (ptr->_string.size())
+                if (_index.size())
+                    exit_error("several indexes in config file");
+                _index = ptr->_string;
+                _uploadable = _config->at_key_parent("uploadable", parent + ".location." + std::to_string(index))->_bool;
+                _cgi_dir = _config->at_key_parent("cgi_dir", parent + ".location." + std::to_string(index))->_string;
+                _route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                _root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                size_t size = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
+                for (size_t j = 0; j < size; j++)
+                    _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
+                size =  _config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array.size();
+                for (size_t j = 0; j < size; j++)
+                    _methods.push_back(_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string);
+            }
+            else
+            {
+                if (_config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string.size())
                 {
-                    if (_index.size())
-                        exit_error("several indexes in config file");
-                    _index = ptr->_string;
-                    size_t ext_nb = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
-                    _uploadable = _config->at_key_parent("uploadable", parent + ".location." + std::to_string(index))->_bool;
-                    for (size_t j = 0; j < ext_nb; j++)
-                        _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
+                    if (_error_page.size())
+                        exit_error("several error pages");
+                    _error_page = _config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string;
+                    _error_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                    _error_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
                 }
             }
         }
 
+        // Other data init
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
         _full_len = 0;
-        _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
         _ev_set.resize(1);
 
         // Creates the socket
