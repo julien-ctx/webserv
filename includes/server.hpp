@@ -22,6 +22,8 @@ private:
     std::string _addr_name;
     TOML::parse *_config;
     std::vector<std::string> _cgi_ext;
+    std::string upload_dir;
+    int _loc_nb;
 
     // Event queue values
     int _kq;
@@ -47,21 +49,27 @@ public:
         std::string parent = "server." + std::to_string(i);
         _port = _config->at_key_parent("port", parent)->_int;
 		_addr_name = _config->at_key_parent("address", parent)->_string;
-        size_t index;
-        size_t size = 0;
-        for (index = 0; ; index++)
+
+        // Count number of locations inside server
+        for (_loc_nb = 0; ; _loc_nb++)
+        {
+            TOML::parse::pointer ptr1 = _config->at_key_parent("route", parent + ".location." + std::to_string(_loc_nb));
+            if (!ptr1)
+                break;
+        }
+        size_t ext_nb = 0;
+        int index;
+        for (index = 0; index < _loc_nb; index++)
         {
             TOML::parse::pointer ptr = _config->at_key_parent("route", parent + ".location." + std::to_string(index));
-            if (!ptr)
-                break;
             if (ptr->_string == "/cgi")
             {
-                size = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
+                ext_nb = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
                 break;
             }
         }
-        for (size_t i = 0; i < size; i++)
-            _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[i]._string);
+        for (size_t j = 0; j < ext_nb; j++)
+            _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
 
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
@@ -149,7 +157,7 @@ public:
         }
     }
 
-    // Accepts the incoming connexion and set the socket ready to read request
+    // Accepts the incoming connexion and sets the socket ready to read request
     void accepter()
     {
         int client_fd = accept(this->_fd, (struct sockaddr *)&this->_addr, &this->_socklen);
@@ -178,7 +186,7 @@ public:
             exit_error("recv function failed");
         else
             this->_buf[ret] = 0;
-        _full_rq += std::string(_buf);
+        _full_rq += std::string(_buf, ret);
 
         requete.string_to_request(_full_rq);
         if (requete._length > _max_size)
@@ -242,13 +250,13 @@ public:
         Request     requete;
         Response    rep;
         
-        // Registers interest in READ on server's fd and add the event to kqueue.
+        // Registers interest in READ on server's fd and adds the event to kqueue.
         EV_SET(&_ev_set.back(), this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 
         while (1)
         {
             kevent(this->_kq, _ev_set.data(), _ev_set.size(), NULL, 0, NULL);
-            // Waits for an event to occur and return number of events catched
+            // Waits for an event to occur and returns number of events caught
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
             _ev_set.clear();
             for (int i = 0; i < event_nb; i++)
