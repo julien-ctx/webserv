@@ -12,14 +12,14 @@ void	limits_value_int(__int64_t min, __int64_t max, string key, __int64_t actual
 }
 
 //str
-void	limits_value_str(vector<string> vec,string key, string actual_value)
+bool	limits_value_str(vector<string> vec, string actual_value)
 {
 	for (size_t i = 0; i < vec.size(); i++)
 	{
 		if (!vec[i].compare(actual_value))
-			return ;
+			return true;
 	}
-		throw TypeError(" has an invalid value", key);
+	return false;
 }
 
 void	address_parse(string value)
@@ -83,6 +83,7 @@ void	verif_content(TOML::parse *pars)
 	bool									is_first;
 	vector<string>							methods;
 	vector<string>							cgi_ex;
+	vector<string>							route_name;
 	// TOML::value								bruh;
 
 	// for (size_t i = 0; i < pars->_hash_tables.size(); i++)
@@ -155,7 +156,7 @@ void	verif_content(TOML::parse *pars)
 
 		if (pars->at_key_parent(to_string(0), (pars->_here + string(".server_name")))->_typing != TOML::T_string )
 			throw TypeError(" hasn't the good type", to_string(i));
-			
+		
 		exist_good_type(pars, string("body_size"), TOML::T_int, false, string("1048576"));
 		limits_value_int(0, 1048576, string("body_size"), pars->at_key_parent(string("body_size"), pars->_here)->_int);
 		
@@ -169,23 +170,29 @@ void	verif_content(TOML::parse *pars)
 			pars->insert_table(to_string(0), false);
 			point->_array.push_back(*pars->at_key_parent(to_string(0), pars->_here));
 		}
+		route_name.clear();
 		for (size_t j = 0; j < point->_array.size(); j++)
 		{
 			pars->_here = string("server.") + to_string(i) + string(".location");
 			pars->adding_here(to_string(j));
 			exist_good_type(pars, string("route"), TOML::T_string, true, string("\"/\""));
+			if (limits_value_str(route_name, pars->at_key_parent(string("route"), (pars->_here))->_string))
+				throw ConfigError("Only one name per route per server");
+			route_name.push_back(pars->at_key_parent(string("route"), (pars->_here))->_string);
 			exist_good_type(pars, string("root"), TOML::T_string, true, string("\"/www\""));
-			exist_good_type(pars, string("index"), TOML::T_string, true, string("\"index.html\""));
+			exist_good_type(pars, string("index"), TOML::T_string, true, string("\"\""));
 			exist_good_type(pars, string("auto_index"), TOML::T_bool, true, string("false"));
 			exist_good_type(pars, string("uploadable"), TOML::T_bool, true, string("false"));
 			exist_good_type(pars, string("cgi_dir"), TOML::T_string, true, string("\"/www/cgi\""));
+			exist_good_type(pars, string("error_page"), TOML::T_string, false, string("\"\""));
 
 			//to see with the others
 			exist_good_type(pars, string("cgi_extension"), TOML::T_array, true, string("[\"py\", \"sh\", \"pl\"]"));
 			for (size_t k = 0; k < pars->at_key_parent(string("cgi_extension"), pars->_here)->_array.size(); k++)
 			{
-				limits_value_str(cgi_ex, pars->at_key_parent(to_string(k), (pars->_here + string(".cgi_extension")))->_key,
-					pars->at_key_parent(to_string(k), (pars->_here + string(".cgi_extension")))->_string);
+				if (!limits_value_str(cgi_ex, pars->at_key_parent(to_string(k), (pars->_here + string(".cgi_extension")))->_string))
+						throw TypeError(" has an invalid value", to_string(k));
+
 			}
 
 			exist_good_type(pars, string("allowed_methods"), TOML::T_array, true, string("[\"POST\", \"GET\", \"DELETE\"]"));
@@ -193,8 +200,8 @@ void	verif_content(TOML::parse *pars)
 				throw TypeError(" hasn't the good type", to_string(i));
 			for (size_t k = 0; k < pars->at_key_parent(string("allowed_methods"), pars->_here)->_array.size(); k++)
 			{
-				limits_value_str(methods, pars->at_key_parent(to_string(k), (pars->_here + string(".allowed_methods")))->_key,
-					pars->at_key_parent(to_string(k), (pars->_here + string(".allowed_methods")))->_string);
+				if(!limits_value_str(methods, pars->at_key_parent(to_string(k), (pars->_here + string(".allowed_methods")))->_string))
+						throw TypeError(" has an invalid value", to_string(k));
 			}
 
 			if (pars->at_key_parent(string("redirect"), pars->_here) != NULL

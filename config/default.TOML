@@ -1,44 +1,19 @@
 [[server]]
-    port = 8080
-    address = "127.0.0.1"
-    server_name = ["localhost"]
-    body_size = 1048576
-    [[server.location]]
-        route = "/"
-        root = "/www"
-        index = "index.html"
-        allowed_methods = ["POST", "GET"]
-    [[server.location]]
-        route = "/upload"
-        cgi_dir = "/www/cgi/upload"
-        uploadable = true
-        allowed_methods = ["POST", "GET", "DELETE"]
-    [[server.location]]
-        route = "/cgi"
-        root = "/www"
-        cgi_extension = ["py", "sh", "pl"]
-    [[server.location]]
-        route = "/errors_index"
-        root = "/www"
-[[server]]
     port = 4242
     address = "0.0.0.0"
-    server_name = ["test2.com","test"]
+    server_name = ["localhost"]
     body_size = 1048576
+
     [[server.location]]
         route = "/"
         root = "/www"
         index = "index.html"
-        allowed_methods = ["POST", "GET"]
-    [[server.location]]
-        route = "/upload"
-        cgi_dir = "/www/cgi/upload"
-        uploadable = true
         allowed_methods = ["POST", "GET", "DELETE"]
+        cgi_extension = ["py", "sh", "pl"]
+        uploadable = false 
+        cgi_dir = "/www/cgi/upload"
+
     [[server.location]]
-        route = "/cgi"
+        route = "/error_pages"
         root = "/www"
-        cgi_extension = ["py", "pl", "sh"]
-    [[server.location]]
-        route = "/errors_index"
-        root = "/www"
+        error_page = "error.html"

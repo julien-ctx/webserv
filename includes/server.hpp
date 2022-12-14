@@ -24,6 +24,9 @@ private:
     std::vector<std::string> _cgi_ext;
     std::string upload_dir;
     int _loc_nb;
+    bool _uploadable;
+    std::string _index;
+    std::string _root;
 
     // Event queue values
     int _kq;
@@ -51,25 +54,26 @@ public:
 		_addr_name = _config->at_key_parent("address", parent)->_string;
 
         // Count number of locations inside server
-        for (_loc_nb = 0; ; _loc_nb++)
-        {
-            TOML::parse::pointer ptr1 = _config->at_key_parent("route", parent + ".location." + std::to_string(_loc_nb));
-            if (!ptr1)
-                break;
-        }
-        size_t ext_nb = 0;
+        _loc_nb = _config->at_key_parent("location", parent)->_array.size();
         int index;
         for (index = 0; index < _loc_nb; index++)
         {
-            TOML::parse::pointer ptr = _config->at_key_parent("route", parent + ".location." + std::to_string(index));
-            if (ptr->_string == "/cgi")
+            // TOML::parse::pointer ptr = _config->at_key_parent("index", parent + ".location." + std::to_string(index));
+            TOML::parse::pointer ptr = _config->at_key_parent("index", parent + ".location." + std::to_string(index));
+            if (ptr)
             {
-                ext_nb = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
-                break;
+                if (ptr->_string.size())
+                {
+                    if (_index.size())
+                        exit_error("several indexes in config file");
+                    _index = ptr->_string;
+                    size_t ext_nb = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
+                    _uploadable = _config->at_key_parent("uploadable", parent + ".location." + std::to_string(index))->_bool;
+                    for (size_t j = 0; j < ext_nb; j++)
+                        _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
+                }
             }
         }
-        for (size_t j = 0; j < ext_nb; j++)
-            _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
 
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = false;
