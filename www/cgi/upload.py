@@ -31,7 +31,7 @@ if __name__ == "__main__":
 					with open(b"./www/cgi/uploads/" + filename, 'wb') as file:
 						file.write(content)
 					msg = "File uploaded"
-					os.chmod("./www/cgi/uploads/" + str(filename.decode("ascii")), 0o644)
+					os.chmod("./www/cgi/uploads/" + str(filename.decode("ascii")), 0o777)
 
 	html = """
 	<!DOCTYPE html>
