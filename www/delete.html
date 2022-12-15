@@ -20,7 +20,9 @@
 	deleteForm.addEventListener('submit', (e) => {
 		e.preventDefault();
 		const filename = document.getElementById('filename').value;
-		fetch(`/my-resource/${filename}`, {
+		if (filename.trim() === '')
+			return;
+		fetch(`${filename}`, {
 		method: 'DELETE'
 		})
 		.then(response => response.json())

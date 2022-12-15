@@ -6,14 +6,14 @@
 
     [[server.location]]
         route = "/"
-        root = "www/"
+        root = "/www"
         index = "index.html"
         allowed_methods = ["POST", "GET", "DELETE"]
         cgi_extension = ["py", "sh", "pl"]
         uploadable = true
-        cgi_dir = "cgi/upload/"
+        cgi_dir = "/cgi/uploads"
 
     [[server.location]]
-        route = "error_pages/"
-        root = "www/"
+        route = "/error_pages"
+        root = "/www"
         error_page = "error.html"

@@ -138,6 +138,38 @@ std::string mime_parser()
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
 
+	int methodDELETE(struct kevent *ev_list , int i, std::string cgi_dir)
+	{
+		std::string file;
+		std::string msg = "Couldn't delete file";
+
+		(void)i;
+		(void)ev_list;
+		file = "./www" + cgi_dir + GetUri().GetPath();
+		struct stat s;
+		if (stat(file.c_str(), &s) == 0 && S_ISREG(s.st_mode))
+			if (!remove(file.c_str()))
+				msg = "File deleted";
+		DEBUG(msg);
+
+		// _content.clear();
+		// s.clear();
+		// buffer.clear();
+		// file.open("./www" + _uri._path);
+		// // if (!file)
+		// // 	return send_error(404, ev_list, i, error_loc);
+		// _status = 200;
+		// buffer << file.rdbuf();
+		// s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
+		// s << "Content-Length: " << GetFileSize(file) << "\r\n";
+		// s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n"; // utiliser MINME ici 
+		// _content = s.str();
+		// this->_content += buffer.str();
+		// file.close();
+		// return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
+		return 1;
+	}
+
 	void set_error(int status, std::string &content)
 	{
 		size_t start = 0;
@@ -154,7 +186,7 @@ std::string mime_parser()
 		std::stringstream buffer;
 
 
-		file_name = "./" + error_loc;
+		file_name = "." + error_loc;
 		file.open(file_name);
 		if (!file)
 			std::cout << RED << "Cannot respond with " << status << std::endl << RESET;

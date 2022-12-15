@@ -72,7 +72,9 @@ public:
                 _uploadable = _config->at_key_parent("uploadable", parent + ".location." + std::to_string(index))->_bool;
                 _cgi_dir = _config->at_key_parent("cgi_dir", parent + ".location." + std::to_string(index))->_string;
                 _route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                if (_route == "/") _route = "";
                 _root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                if (_root == "/") _root = "";
                 size_t size = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
                 for (size_t j = 0; j < size; j++)
                     _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
@@ -97,7 +99,9 @@ public:
                         exit_error("several error pages");
                     _error_page = _config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string;
                     _error_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                    if (_error_route == "/") _error_route = "";
                     _error_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                    if (_error_root == "/") _error_root = "";
                 }
             }
         }
@@ -259,7 +263,7 @@ public:
         Response rep(requete);
         if (rep._status != 0)
         {
-            rep.send_error(requete._status, _ev_list, i, _error_root + _error_route + _error_page);
+            rep.send_error(requete._status, _ev_list, i, _error_root + _error_route + "/" + _error_page);
             rep._status = 0;
         }
         else
@@ -269,11 +273,11 @@ public:
             else
             {
                 if (requete._method == GET)
-                    rep.methodGET(_ev_list, i, _error_root + _error_route + _error_page);
-                // else if (requete._method == DELETE)
-                    // rep.methodDELETE(_ev_list);
+                    rep.methodGET(_ev_list, i, _error_root + _error_route + "/" + _error_page);
+                else if (requete._method == DELETE)
+                    rep.methodDELETE(_ev_list, i, _cgi_dir);
                 if (requete._method > 2)
-                    rep.send_error(405, _ev_list, i, _error_root + _error_route + _error_page);
+                    rep.send_error(405, _ev_list, i, _error_root + _error_route + "/" + _error_page);
             }
         }
         _rq = false;

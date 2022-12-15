@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <sys/event.h>
 #include <unistd.h>
@@ -12,6 +13,7 @@
 #include <fstream>
 #include <sstream>
 #include <sys/socket.h>
+#include <cstdio>
 #include <sys/un.h>
 #include <netdb.h>
 #include <fcntl.h>
@@ -22,9 +24,9 @@
 # include "../includes/config_parser.hpp"
 
 #define BUFFER_SIZE 30000
-#define TIMEOUT 1000
+#define TIMEOUT 7000
 #define MAX_REQ_LEN 50000
-#define MAX_SERVERS 10
+#define MAX_SERVERS 5
 
 #define DEBUG(x) std::cout << CYAN << x << std::endl << RESET;
 
