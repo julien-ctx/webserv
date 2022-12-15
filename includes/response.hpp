@@ -115,7 +115,7 @@ std::string mime_parser()
 		return size;
 	}
 
-	int methodGET(struct kevent *ev_list , int i)
+	int methodGET(struct kevent *ev_list , int i, std::string error_loc)
 	{
 		std::stringstream	s;
 		std::ifstream 		file;
@@ -126,7 +126,7 @@ std::string mime_parser()
 		buffer.clear();
 		file.open("./www" + _uri._path);
 		if (!file)
-			return send_error(404, ev_list, i);
+			return send_error(404, ev_list, i, error_loc);
 		_status = 200;
 		buffer << file.rdbuf();
 		s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
@@ -145,7 +145,7 @@ std::string mime_parser()
 			content.replace(start, 10, std::to_string(status));
 	}
 
-	bool send_error(int status, struct kevent *ev_list , int i)
+	bool send_error(int status, struct kevent *ev_list , int i, std::string error_loc)
 	{
 		std::string 		file_name;
 		std::ifstream 		file;
@@ -154,10 +154,10 @@ std::string mime_parser()
 		std::stringstream buffer;
 
 
-		file_name = "www/error.html";
+		file_name = "./" + error_loc;
 		file.open(file_name);
 		if (!file)
-			std::cout << RED << "Cannot respond with " << status << RESET;
+			std::cout << RED << "Cannot respond with " << status << std::endl << RESET;
 		buffer << file.rdbuf();
 		std::string file_content = buffer.str();
 		std::string ns = file_content;

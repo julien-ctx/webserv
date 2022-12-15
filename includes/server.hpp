@@ -244,7 +244,10 @@ public:
         }
         else if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
                 || (requete.GetMethod() == GET))
+        {
+            DEBUG(_full_rq);
             setReadyToWrite(i);
+        }
         return requete;
     }
 
@@ -255,7 +258,7 @@ public:
         Response rep(requete);
         if (rep._status != 0)
         {
-            rep.send_error(requete._status, _ev_list, i);
+            rep.send_error(requete._status, _ev_list, i, _error_root + _error_route + _error_page);
             rep._status = 0;
         }
         else
@@ -265,9 +268,9 @@ public:
             else
             {
                 if (requete._method == 0)
-                    rep.methodGET(_ev_list, i);
+                    rep.methodGET(_ev_list, i, _error_root + _error_route + _error_page);
                 if (requete._method > 2)
-                    rep.send_error(405, _ev_list, i);
+                    rep.send_error(405, _ev_list, i, _error_root + _error_route + _error_page);
             }
         }
         _rq = false;

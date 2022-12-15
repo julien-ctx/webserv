@@ -23,7 +23,7 @@ if __name__ == "__main__":
 				if b"filename=" in line:
 					filename = line.split(b'filename="', 1)[1].split(b'"')[0]
 			if content and filename:
-				if not os.path.isdir("./www/cgi/uploads/"):
+				if not os.path.isdir(b"./www/cgi/uploads/"):
 					msg = "Upload directory doesn't exists"
 				elif (os.path.isfile(b"./www/cgi/uploads/" + filename)):
 					msg = "File already exists"
@@ -31,7 +31,7 @@ if __name__ == "__main__":
 					with open(b"./www/cgi/uploads/" + filename, 'wb') as file:
 						file.write(content)
 					msg = "File uploaded"
-					os.chmod("./www/cgi/uploads/" + str(filename.decode("ascii")), 0o777)
+					os.chmod("./www/cgi/uploads/" + str(filename.decode("ascii")), 0o644)
 
 	html = """
 	<!DOCTYPE html>

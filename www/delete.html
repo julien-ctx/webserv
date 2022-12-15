@@ -10,10 +10,8 @@
 
 <body>
 	<h1><a href="/">Webserv</a></h1>
-	<form method="post" action="./cgi/upload.py" enctype="multipart/form-data">
-		<input type="file" id="actual-btn" name="file" hidden required/>
-		<label for="actual-btn">Choose File<br></label>
-		<input type="submit" class="submit-button" name="submit" value="Submit">
+	<form method="DELETE" action="/my-resource">
+		<button type="submit">Delete</button>
 	</form>
 	<footer>
 		<div class="wave"></div>
