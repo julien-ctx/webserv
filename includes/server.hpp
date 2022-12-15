@@ -235,6 +235,7 @@ public:
         if (std::find(_methods.begin(), _methods.end(), requete.GetMethod()) == _methods.end())
         {
             // Set 401 error here
+            exit_error("Unauthorized method"); // Remove the exit as soon as error management is fixed
             setReadyToWrite(i);
         }
         else if (requete._length > _max_size)
@@ -243,7 +244,7 @@ public:
             setReadyToWrite(i);
         }
         else if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
-                || (requete.GetMethod() == GET))
+                || (requete.GetMethod() == GET) || (requete.GetMethod() == DELETE))
         {
             DEBUG(_full_rq);
             setReadyToWrite(i);
@@ -267,8 +268,10 @@ public:
                 cgi.execute(this->_ev_list[i].ident, requete);
             else
             {
-                if (requete._method == 0)
+                if (requete._method == GET)
                     rep.methodGET(_ev_list, i, _error_root + _error_route + _error_page);
+                // else if (requete._method == DELETE)
+                    // rep.methodDELETE(_ev_list);
                 if (requete._method > 2)
                     rep.send_error(405, _ev_list, i, _error_root + _error_route + _error_page);
             }

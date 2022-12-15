@@ -283,3 +283,8 @@ nav ul li a:hover
     transition: 1s;
 }
 
+input[type=text]
+{
+    border: 2px solid rgb(0, 0, 0);
+    border-radius: 4px;
+}

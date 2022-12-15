@@ -10,9 +10,24 @@
 
 <body>
 	<h1><a href="/">Webserv</a></h1>
-	<form method="DELETE" action="/my-resource">
-		<button type="submit">Delete</button>
+  	<p>Enter the name of the file you want to remove.<br />This file must be inside the upload directory specified in the config file.</p>
+	<form id="deleteForm">
+		<input type="text" id="filename" name="filename">
+		<button type="submit" class="submit-button" id="delete-button">Delete</button>
 	</form>
+	<script>
+	const deleteForm = document.getElementById('deleteForm')
+	deleteForm.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const filename = document.getElementById('filename').value;
+		fetch(`/my-resource/${filename}`, {
+		method: 'DELETE'
+		})
+		.then(response => response.json())
+		.then(data => console.log(data))
+		.catch(error => console.error(error))
+	})
+	</script>
 	<footer>
 		<div class="wave"></div>
 		<div class="wave"></div>
