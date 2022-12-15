@@ -10,7 +10,7 @@
         index = "index.html"
         allowed_methods = ["POST", "GET", "DELETE"]
         cgi_extension = ["py", "sh", "pl"]
-        uploadable = false 
+        uploadable = true
         cgi_dir = "/www/cgi/upload"
 
     [[server.location]]

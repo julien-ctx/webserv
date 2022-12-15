@@ -29,7 +29,7 @@ private:
     std::string _index;
     std::string _root;
     std::string _route;
-    std::vector<std::string> _methods;
+    std::vector<int> _methods;
     std::string _error_page;
     std::string _error_route;
     std::string _error_root;
@@ -61,8 +61,7 @@ public:
         _loc_nb = _config->at_key_parent("location", parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
 
-        int index;
-        for (index = 0; index < _loc_nb; index++)
+        for (int index = 0; index < _loc_nb; index++)
         {
             TOML::parse::pointer ptr = _config->at_key_parent("index", parent + ".location." + std::to_string(index));
             if (ptr->_string.size())
@@ -79,7 +78,16 @@ public:
                     _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
                 size =  _config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array.size();
                 for (size_t j = 0; j < size; j++)
-                    _methods.push_back(_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string);
+                {
+                    if (_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string == "GET")
+                        _methods.push_back(GET);
+                    else if (_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string == "POST")
+                        _methods.push_back(POST);
+                    else if (_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string == "DELETE")
+                        _methods.push_back(DELETE);
+                    else
+                        exit_error("some allowed methods are not handled by the server");
+                }
             }
             else
             {
@@ -197,6 +205,15 @@ public:
         EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
     }
 
+    void setReadyToWrite(int &i)
+    {
+        _full_rq = "";
+        _rq = true;
+        _full_len = 0;
+        _ev_set.resize(_ev_set.size() + 1);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+    }
+
     // Receives request and sets the client ready to send the response
     Request request_handler(int &i)
     {
@@ -210,25 +227,24 @@ public:
         else
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf, ret);
-
         requete.string_to_request(_full_rq);
-        if (requete._length > _max_size)
-        {
-            EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-            return requete;
-        }
         if (requete._length)
             _full_len = requete._length;
-            
-        if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
-            || (requete.GetMethod() == GET))
+
+        // Error handling
+        if (std::find(_methods.begin(), _methods.end(), requete.GetMethod()) == _methods.end())
         {
-            _full_rq = "";
-            _rq = true;
-            _full_len = 0;
-            _ev_set.resize(_ev_set.size() + 1);
-            EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+            // Set 401 error here
+            setReadyToWrite(i);
         }
+        else if (requete._length > _max_size)
+        {
+            // Set 413 error here
+            setReadyToWrite(i);
+        }
+        else if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
+                || (requete.GetMethod() == GET))
+            setReadyToWrite(i);
         return requete;
     }
 
