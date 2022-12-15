@@ -11,7 +11,7 @@
         allowed_methods = ["POST", "GET", "DELETE"]
         cgi_extension = ["py", "sh", "pl"]
         uploadable = true
-        cgi_dir = "/www/cgi/upload"
+        cgi_dir = "/cgi/upload"
 
     [[server.location]]
         route = "/error_pages"

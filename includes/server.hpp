@@ -244,7 +244,10 @@ public:
         }
         else if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
                 || (requete.GetMethod() == GET))
+        {
+            DEBUG(_full_rq);
             setReadyToWrite(i);
+        }
         return requete;
     }
 

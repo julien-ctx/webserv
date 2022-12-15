@@ -3,32 +3,32 @@ import sys
 import os
 
 if __name__ == "__main__":
-	stdin = ""
-	for line in sys.stdin:
+	stdin = b""
+	for line in sys.stdin.buffer:
 		stdin += line
 	if not stdin:
 		exit()
-	boundary = stdin.split('\n')[0]
+	boundary = stdin.split(b'\n')[0]
 	stdin = stdin.split(boundary)
-	content = ""
+	content = b""
 	msg = "Invalid submission"
 
 	for block in stdin:
-		if "filename=" in block:
-			split = block.split("\r\n")
-			content = ""
+		if b"filename=" in block:
+			split = block.split(b"\r\n")
+			content = b""
 			filename = ""
 			content = split[-2]
 			for line in split:
-				if "filename=" in line:
-					filename = line.split('filename="', 1)[1].split('"')[0]
+				if b"filename=" in line:
+					filename = line.split(b'filename="', 1)[1].split(b'"')[0]
 			if content and filename:
 				if not os.path.isdir("./www/cgi/uploads/"):
 					msg = "Upload directory doesn't exists"
-				elif (os.path.isfile("./www/cgi/uploads/" + filename)):
+				elif (os.path.isfile(b"./www/cgi/uploads/" + filename)):
 					msg = "File already exists"
 				else:
-					with open("./www/cgi/uploads/" + filename, 'w') as file:
+					with open(b"./www/cgi/uploads/" + filename, 'wb') as file:
 						file.write(content)
 					msg = "File uploaded"
 
