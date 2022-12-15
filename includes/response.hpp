@@ -115,7 +115,7 @@ std::string mime_parser()
 		return size;
 	}
 
-	int methodGET(struct kevent *ev_list , int i, std::string error_loc)
+	int methodGET(struct kevent *ev_list , int i, std::string error_loc, std::string path)
 	{
 		std::stringstream	s;
 		std::ifstream 		file;
@@ -124,7 +124,7 @@ std::string mime_parser()
 		_content.clear();
 		s.clear();
 		buffer.clear();
-		file.open("./www" + _uri._path);
+		file.open("." + path + _uri._path);
 		if (!file)
 			return send_error(404, ev_list, i, error_loc);
 		_status = 200;
@@ -141,33 +141,26 @@ std::string mime_parser()
 	int methodDELETE(struct kevent *ev_list , int i, std::string cgi_dir)
 	{
 		std::string file;
+		std::stringstream content;
 		std::string msg = "Couldn't delete file";
 
-		(void)i;
-		(void)ev_list;
-		file = "./www" + cgi_dir + GetUri().GetPath();
+		file =  "." + cgi_dir + GetUri().GetPath();
 		struct stat s;
 		if (stat(file.c_str(), &s) == 0 && S_ISREG(s.st_mode))
 			if (!remove(file.c_str()))
 				msg = "File deleted";
-		DEBUG(msg);
+		
+		std::string html = "<!DOCTYPE html>\
+		<html lang=\"en\" >\
+		<h3>" + msg + "</h3>\
+		</html>";
 
-		// _content.clear();
-		// s.clear();
-		// buffer.clear();
-		// file.open("./www" + _uri._path);
-		// // if (!file)
-		// // 	return send_error(404, ev_list, i, error_loc);
-		// _status = 200;
-		// buffer << file.rdbuf();
-		// s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
-		// s << "Content-Length: " << GetFileSize(file) << "\r\n";
-		// s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n"; // utiliser MINME ici 
-		// _content = s.str();
-		// this->_content += buffer.str();
-		// file.close();
-		// return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
-		return 1;
+		_status = 200;
+		content << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
+		content << "Content-Length: " << html.size() << "\r\n";
+		content << "Content-Type: " "text/html" << "\r\n\r\n";
+		content << html;
+		return send(ev_list[i].ident, content.str().c_str(), content.str().size(), 0);
 	}
 
 	void set_error(int status, std::string &content)

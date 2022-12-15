@@ -15,6 +15,8 @@
 		<input type="text" id="filename" name="filename">
 		<button type="submit" class="submit-button" id="delete-button">Delete</button>
 	</form>
+	<div id="response"></div>
+
 	<script>
 	const deleteForm = document.getElementById('deleteForm')
 	deleteForm.addEventListener('submit', (e) => {
@@ -22,11 +24,14 @@
 		const filename = document.getElementById('filename').value;
 		if (filename.trim() === '')
 			return;
-		fetch(`${filename}`, {
-		method: 'DELETE'
+			fetch(`${filename}`, {
+			method: 'DELETE'
 		})
-		.then(response => response.json())
-		.then(data => console.log(data))
+		.then(response => response.text())
+		.then(html => {
+			document.getElementById('response').innerHTML = html;
+			location.replace();
+		})
 		.catch(error => console.error(error))
 	})
 	</script>

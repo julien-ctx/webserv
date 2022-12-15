@@ -273,10 +273,10 @@ public:
             else
             {
                 if (requete._method == GET)
-                    rep.methodGET(_ev_list, i, _error_root + _error_route + "/" + _error_page);
+                    rep.methodGET(_ev_list, i, _error_root + _error_route + "/" + _error_page, _root + _route);
                 else if (requete._method == DELETE)
-                    rep.methodDELETE(_ev_list, i, _cgi_dir);
-                if (requete._method > 2)
+                    rep.methodDELETE(_ev_list, i, _root + _route + _cgi_dir);
+                else if (requete._method > 2)
                     rep.send_error(405, _ev_list, i, _error_root + _error_route + "/" + _error_page);
             }
         }
