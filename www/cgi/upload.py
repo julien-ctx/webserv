@@ -3,6 +3,7 @@ import sys
 import os
 
 if __name__ == "__main__":
+	sys.setrecursionlimit(10000)
 	stdin = sys.stdin.buffer.read()
 	if not stdin:
 		exit()
