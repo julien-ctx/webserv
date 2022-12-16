@@ -3,9 +3,7 @@ import sys
 import os
 
 if __name__ == "__main__":
-	stdin = b""
-	for line in sys.stdin.buffer:
-		stdin += line
+	stdin = sys.stdin.buffer.read()
 	if not stdin:
 		exit()
 	boundary = stdin.split(b'\n')[0]
@@ -13,13 +11,13 @@ if __name__ == "__main__":
 	content = b""
 	msg = "Invalid submission"
 	cgi_dir = stdin[-1].split(b"\r\n")[-1] + b"/"
-
-	for block in stdin:
+	
+	for block in stdin[1:]:
 		if b"filename=" in block:
 			split = block.split(b"\r\n")
 			content = b""
 			filename = ""
-			content = split[-2]
+			content = b"\r\n".join(split[3:-1])
 			for line in split:
 				if b"filename=" in line:
 					filename = line.split(b'filename="', 1)[1].split(b'"')[0]
