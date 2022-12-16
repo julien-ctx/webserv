@@ -7,8 +7,8 @@
 # include "../includes/config_parser.hpp"
 # include "../includes/server.hpp"
 # include "../includes/response.hpp"
-using namespace TOML;
 
+using namespace TOML;
 
 std::ostream& operator<< (std::ostream& o, TOML::value& val)
 {

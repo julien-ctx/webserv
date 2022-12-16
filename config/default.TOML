@@ -1,5 +1,5 @@
 [[server]]
-    port = 4242
+    port = 4206
     address = "0.0.0.0"
     server_name = ["localhost"]
     body_size = 1048576

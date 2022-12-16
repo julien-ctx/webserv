@@ -185,7 +185,6 @@ std::string mime_parser()
 			std::cout << RED << "Cannot respond with " << status << std::endl << RESET;
 		buffer << file.rdbuf();
 		std::string file_content = buffer.str();
-		std::string ns = file_content;
 		set_error(status, file_content);
 		s << _version << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
