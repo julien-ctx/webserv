@@ -9,9 +9,10 @@ private:
 	std::string _output;
 	std::string _path;
 	std::string _type;
+	std::string _cgi_dir;
 	std::vector<std::string> _env;
 public:
-	CGI(std::string file) : _output(""), _path("./www/" + file) {}
+	CGI(std::string file, std::string cgi_dir) : _output(""), _path("." + file), _cgi_dir("." + cgi_dir) {}
 	~CGI() {}
 
 	char **getEnv()
@@ -58,7 +59,7 @@ public:
 		else if (!id)
 		{
 			pipe(in);
-			write(in[1], rq.GetBody().c_str(), rq.GetBodyLength());
+			write(in[1], (rq.GetBody() + _cgi_dir).c_str(), rq.GetBodyLength() + _cgi_dir.size());
 			close(in[1]);
 
 			close(out[0]);

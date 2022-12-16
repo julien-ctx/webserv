@@ -12,6 +12,7 @@ if __name__ == "__main__":
 	stdin = stdin.split(boundary)
 	content = b""
 	msg = "Invalid submission"
+	cgi_dir = stdin[-1].split(b"\r\n")[-1] + b"/"
 
 	for block in stdin:
 		if b"filename=" in block:
@@ -23,15 +24,15 @@ if __name__ == "__main__":
 				if b"filename=" in line:
 					filename = line.split(b'filename="', 1)[1].split(b'"')[0]
 			if content and filename:
-				if not os.path.isdir(b"./www/cgi/uploads/"):
-					msg = "Upload directory doesn't exists"
-				elif (os.path.isfile(b"./www/cgi/uploads/" + filename)):
+				if not os.path.isdir(cgi_dir):
+					os.makedirs(cgi_dir)	
+				if (os.path.isfile(cgi_dir + filename)):
 					msg = "File already exists"
 				else:
-					with open(b"./www/cgi/uploads/" + filename, 'wb') as file:
+					with open(cgi_dir + filename, 'wb') as file:
 						file.write(content)
 					msg = "File uploaded"
-					os.chmod("./www/cgi/uploads/" + str(filename.decode("ascii")), 0o777)
+					os.chmod(cgi_dir + filename, 0o777)
 
 	html = """
 	<!DOCTYPE html>

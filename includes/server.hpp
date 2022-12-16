@@ -259,7 +259,7 @@ public:
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request requete)
     {
-        CGI cgi(requete.GetUri().GetPath());
+        CGI cgi(_root + _route + requete.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(requete);
         if (rep._status != 0)
         {
