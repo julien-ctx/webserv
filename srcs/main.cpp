@@ -67,14 +67,21 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 
 void *serv_thread(void *server)
 {
-	Response resp;
-	Server *serv;
+	try
+	{
+		Response resp;
+		Server *serv;
 
-	serv = (Server *)server;
-	serv->binder();
-	serv->listener();
-	serv->launch();
-	return NULL;
+		serv = (Server *)server;
+		serv->binder();
+		serv->listener();
+		serv->launch();
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "Server error : " << e.what() << '\n';
+	}
+		return NULL;
 }
 
 int main(int ac, char **av)

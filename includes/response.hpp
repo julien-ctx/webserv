@@ -131,7 +131,7 @@ std::string mime_parser()
 		buffer << file.rdbuf();
 		s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
 		s << "Content-Length: " << GetFileSize(file) << "\r\n";
-		s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n"; // utiliser MINME ici 
+		s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n";
 		_content = s.str();
 		this->_content += buffer.str();
 		file.close();

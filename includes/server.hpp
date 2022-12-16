@@ -33,6 +33,9 @@ private:
     std::string _error_page;
     std::string _error_route;
     std::string _error_root;
+    std::string _cookie_root;
+    std::string _cookie_route;
+    std::string _cookie_page;
 
     // Event queue values
     int _kq;
@@ -91,18 +94,26 @@ public:
                         exit_error("some allowed methods are not handled by the server");
                 }
             }
-            else
+            else if (_config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string.size())
             {
-                if (_config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string.size())
-                {
-                    if (_error_page.size())
-                        exit_error("several error pages");
-                    _error_page = _config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string;
-                    _error_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
-                    if (_error_route == "/") _error_route = "";
-                    _error_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
-                    if (_error_root == "/") _error_root = "";
-                }
+                if (_error_page.size())
+                    exit_error("several error pages");
+                _error_page = _config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string;
+                _error_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                if (_error_route == "/") _error_route = "";
+                _error_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                if (_error_root == "/") _error_root = "";
+            }
+            else if (_config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string.size())
+            {
+                if (_cookie_page.size())
+                    exit_error("several cookies pages");
+                _cookie_page = _config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string;
+                _cookie_route =  _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                if (_cookie_route == "/") _cookie_route = "";
+                _cookie_root =  _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                if (_cookie_root == "/") _cookie_root = "";
+
             }
         }
 
@@ -259,6 +270,7 @@ public:
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request requete)
     {
+		// if (requete.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
         CGI cgi(_root + _route + requete.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(requete);
         if (rep._status != 0)

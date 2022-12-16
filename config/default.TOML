@@ -17,24 +17,8 @@
         route = "/error_pages"
         root = "/www"
         error_page = "error.html"
-
-[[server]]
-    port = 8080
-    address = "127.0.0.1"
-    server_name = ["localhost"]
-    body_size = 1048576
-
+    
     [[server.location]]
-        route = "/"
+        route = "/cookies"
         root = "/www"
-        index = "index.html"
-        allowed_methods = ["POST", "GET", "DELETE"]
-        cgi_extension = ["py", "sh", "pl"]
-        uploadable = true
-        cgi_dir = "/cgi/uploads"
-
-    [[server.location]]
-        route = "/error_pages"
-        root = "/www"
-        error_page = "error.html"
-
+        cookie_page = "cookies.html"
