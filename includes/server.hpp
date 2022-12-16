@@ -168,6 +168,12 @@ public:
         return close(fd);
     }
 
+    void set_error(int status, std::string &content)
+	{
+		size_t start = 0;
+		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
+			content.replace(start, 10, std::to_string(status));
+	}
 
 	bool send_error(int status, struct kevent *ev_list , int i, std::string error_loc)
 	{
@@ -189,21 +195,13 @@ public:
 		s << "HTTP/1.1" << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
-		//content = s.str();
 		s.clear();
 		content += file_content;
 		file.close();
 		int ret = send(ev_list[i].ident, content.c_str(), content.size(), 0);
-       if (status == 408)
+        if (status == 408)
            delete_client(this->_ev_list[i].ident);
         return ret > 0;
-	}
-
-    void set_error(int status, std::string &content)
-	{
-		size_t start = 0;
-		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
-			content.replace(start, 10, std::to_string(status));
 	}
 
     void binder()
@@ -293,6 +291,7 @@ public:
         else if (requete._length > _max_size)
         {
             // Set 413 error here
+            exit_error("request size too big");
             setReadyToWrite(i);
         }
         else if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
@@ -307,10 +306,11 @@ public:
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request requete)
     {
-		// if (requete.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
         CGI cgi(_root + _route + requete.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(requete);
-        if (rep._status != 0)
+		if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
+            rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page);
+        else if (rep._status != 0)
         {
             rep.send_error(requete._status, _ev_list, i, _error_root + _error_route + "/" + _error_page);
             rep._status = 0;

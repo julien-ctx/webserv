@@ -149,185 +149,177 @@ else
 
 class Request
 {
+public:
 
-    public:
+    Request() : _version("HTTP/1.1")  {}//: _method(0) {}  // vide par default? --> a voir | 0 pour GET
+    Request(std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _error_route, std::string _error_root) :
+                        _version("HTTP/1.1"), _index(_index), _root(_root), _route(_route), _methods(_methods), _error_page(_error_page), _error_route(_error_route), _error_root(_error_root) {}
+    ~Request() {}
 
-Request() : _version("HTTP/1.1")  {}//: _method(0) {}  // vide par default? --> a voir | 0 pour GET
-Request(std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _error_route, std::string _error_root) :
-                    _version("HTTP/1.1"), _index(_index), _root(_root), _route(_route), _methods(_methods), _error_page(_error_page), _error_route(_error_route), _error_root(_error_root) {}
-~Request() {}
+    void SetMethod(int method)
+    { _method = method; }
 
-void SetMethod(int method)
-{ _method = method; }
+    void SetUri(const Uri& uri)
+    { _uri = uri; }
 
-void SetUri(const Uri& uri)
-{ _uri = uri; }
-
-void SetBody(const std::string& body)
-{
-    _body = body;
-    SetBodyLength();
-}
-
-void SetBodyLength()
-{ SetHeader("Content-Length", std::to_string(_body.length())); }
-
-void SetHeader(const std::string& key, const std::string& value)
-{ _headers[key] = value; }
-
-void RemoveHeader(const std::string& key)
-{ _headers.erase(key); }
-
-void ClearHeader()
-{ _headers.clear(); }
-
-int GetMethod() const
-{ return _method; }
-
-Uri GetUri() const
-{ return _uri; }
-
-std::string GetVersion() const
-{ return _version; }
-
-std::string GetBody() const
-{ return _body; }
-
-std::map<std::string, std::string> GetHeaders() const
-{ return _headers; }
-
-size_t GetBodyLength() const
-{ return _body.length(); }
-
-
-friend std::string to_string(const Request& request); // --> a coder
-
-// transforme une string en une requete
-void string_to_request(const std::string request_string)
-{
-    std::string         start_line, header_lines, message_body;
-    std::istringstream  iss;                          // voir https://www.youtube.com/watch?v=KUx9YfHkllk pour plus d'explications
-    std::string         line, method, path, version;  // for first line
-    std::string         key, value;                   // for header
-    Uri                 uri;
-    size_t              lpos = 0, rpos = 0;
-    std::map<std::string, std::string>::iterator it;
-
-    rpos = request_string.find("\r\n", lpos);
-    if (rpos == std::string::npos) // npos --> means "until the end of the string"
+    void SetBody(const std::string& body)
     {
-        _status = 400;
+        _body = body;
+        SetBodyLength();
+    }
+
+    void SetBodyLength()
+    { SetHeader("Content-Length", std::to_string(_body.length())); }
+
+    void SetHeader(const std::string& key, const std::string& value)
+    { _headers[key] = value; }
+
+    void RemoveHeader(const std::string& key)
+    { _headers.erase(key); }
+
+    void ClearHeader()
+    { _headers.clear(); }
+
+    int GetMethod() const
+    { return _method; }
+
+    Uri GetUri() const
+    { return _uri; }
+
+    std::string GetVersion() const
+    { return _version; }
+
+    std::string GetBody() const
+    { return _body; }
+
+    std::map<std::string, std::string> GetHeaders() const
+    { return _headers; }
+
+    size_t GetBodyLength() const
+    { return _body.length(); }
+
+    // transforme une string en une requete
+    void string_to_request(const std::string request_string)
+    {
+        std::string         start_line, header_lines, message_body;
+        std::istringstream  iss;                          // voir https://www.youtube.com/watch?v=KUx9YfHkllk pour plus d'explications
+        std::string         line, method, path, version;  // for first line
+        std::string         key, value;                   // for header
+        Uri                 uri;
+        size_t              lpos = 0, rpos = 0;
+        std::map<std::string, std::string>::iterator it;
+
+        rpos = request_string.find("\r\n", lpos);
+        if (rpos == std::string::npos) // npos --> means "until the end of the string"
+        {
+            _status = 400;
+            return;
+        }
+        
+        start_line = request_string.substr(0, rpos);  // si bug essayer substr(lpos, rpos - lpos) mais lpos = 0 ici
+        lpos = rpos + 2; // +1 pour \r +1 pour \n --> +2
+        rpos = request_string.find("\r\n\r\n", lpos);   // --> r\n\r\n = debut du body / fin header
+        if (rpos != std::string::npos) // on a trouve l'header
+        {
+            header_lines = request_string.substr(lpos, rpos - lpos);
+            lpos = rpos + 4;  // +4 pour les \r\n\r\n
+            rpos = request_string.length();
+            if (lpos < rpos) // si il y a quelque chose apres \r\n\r\n --> c'est le body
+                message_body = request_string.substr(lpos, rpos - lpos); // no need more path --> 
+        }
+        
+        iss.clear();  // parse the start line
+        iss.str(start_line);
+        iss >> method >> path >> version;   // >> = ' ' donc : GET /info.html HTTP/1.1 --> GET>>/info.html>>HTTP/1.1
+        if (!iss.good() && !iss.eof())
+            _status = 400;
+        SetMethod(string_to_method(method));
+        if (path == "/")
+            path += _index;
+        SetUri(Uri(path));
+        if (version.compare(GetVersion()) != 0 && _method == 0)
+            _status = 505;
+        iss.clear();  // parse header fields
+        iss.str(header_lines);
+        while (std::getline(iss, line)) // --> cet overload de getline = gnl en gros
+        {
+            std::istringstream header_stream(line); // 
+            std::getline(header_stream, key, ':'); // getline until ':'
+            std::getline(header_stream, value);
+            key = DelWhiteSpace(key);
+            value = DelWhiteSpace(value);
+            SetHeader(key, value);
+        }
+        _length = _headers.find("Content-Length") == _headers.end() ? 0 : atoi(_headers.find("Content-Length")->second.c_str());
+        if (_headers.find("Transfer-Encoding") != _headers.end())
+        {
+            bool chunk = false;
+            char **array = split(it->second.c_str(), ',');
+            for (int i = 0; array[i] != NULL; i++)
+            {
+                if (strstr((const char *)(array + i), "chunked") != NULL)
+                    chunk = true;
+                free(array + i);
+            }
+            free(array);
+            if (it == _headers.end() && chunk == false)
+            {
+                _status = 411;
+                return ;
+            }
+            if (chunk == true)
+            {
+                errno = 0;
+                long data_size = strtol(message_body.c_str(), NULL, 16);
+                if (errno != 0)
+                {
+                    _status = 406;
+                    return ;   
+                }
+                std::stringstream body_msg;
+                std::string line, body;
+                long chunk_size, current_size = 0;
+                while (std::getline(body_msg, line))
+                {
+                    chunk_size = line.length() + 1;
+                    if (chunk_size == 0)
+                        break;
+                    if (current_size <= data_size)
+                    {
+                        current_size += chunk_size = 1;
+                        line = trim(line);
+                        line += '\n';
+                        body += line;
+                    }
+                    if (current_size == chunk_size && std::getline(body_msg, line))
+                    {
+                        chunk_size = strtol(line.c_str(), NULL, 16);
+                        current_size = 0;
+                    }
+                }
+                SetBody(body);
+            }
+        }
+        else
+            SetBody(message_body);
+        _status = 0;
         return;
     }
-    
-    start_line = request_string.substr(0, rpos);  // si bug essayer substr(lpos, rpos - lpos) mais lpos = 0 ici
-    lpos = rpos + 2; // +1 pour \r +1 pour \n --> +2
-    rpos = request_string.find("\r\n\r\n", lpos);   // --> r\n\r\n = debut du body / fin header
-    if (rpos != std::string::npos) // on a trouve l'header
-    {
-        header_lines = request_string.substr(lpos, rpos - lpos);
-        lpos = rpos + 4;  // +4 pour les \r\n\r\n
-        rpos = request_string.length();
-        if (lpos < rpos) // si il y a quelque chose apres \r\n\r\n --> c'est le body
-            message_body = request_string.substr(lpos, rpos - lpos); // no need more path --> 
-    }
-    
-    iss.clear();  // parse the start line
-    iss.str(start_line);
-    iss >> method >> path >> version;   // >> = ' ' donc : GET /info.html HTTP/1.1 --> GET>>/info.html>>HTTP/1.1
-    if (!iss.good() && !iss.eof())
-        _status = 400;
-    SetMethod(string_to_method(method));
-    if (path == "/")
-        path += _index;
-    std::cout << GREEN << "Je suis path : " << path << RESET << std::endl;
-    SetUri(Uri(path));
-    if (version.compare(GetVersion()) != 0 && _method == 0)
-        _status = 505;
-    iss.clear();  // parse header fields
-    iss.str(header_lines);
-    while (std::getline(iss, line)) // --> cet overload de getline = gnl en gros
-    {
-        std::istringstream header_stream(line); // 
-        std::getline(header_stream, key, ':'); // getline until ':'
-        std::getline(header_stream, value);
-        key = DelWhiteSpace(key);
-        value = DelWhiteSpace(value);
-        SetHeader(key, value);
-    }
-    _length = _headers.find("Content-Length") == _headers.end() ? 0 : atoi(_headers.find("Content-Length")->second.c_str());
-    if (_headers.find("Transfer-Encoding") != _headers.end())
-    {
-        bool chunk = false;
-        char **array = split(it->second.c_str(), ',');
-        for (int i = 0; array[i] != NULL; i++)
-        {
-            if (strstr((const char *)(array + i), "chunked") != NULL)
-                chunk = true;
-            free(array + i);
-        }
-        free(array);
-        if (it == _headers.end() && chunk == false)
-        {
-            _status = 411;
-            return ;
-        }
-        if (chunk == true)
-        {
-            errno = 0;
-            long data_size = strtol(message_body.c_str(), NULL, 16);
-            if (errno != 0)
-            {
-                _status = 406;
-                return ;   
-            }
-            std::stringstream body_msg;
-            std::string line, body;
-            long chunk_size, current_size = 0;
-            while (std::getline(body_msg, line))
-            {
-                chunk_size = line.length() + 1;
-                if (chunk_size == 0)
-                    break;
-                if (current_size <= data_size)
-                {
-                    current_size += chunk_size = 1;
-                    line = trim(line);
-                    line += '\n';
-                    body += line;
-                }
-                if (current_size == chunk_size && std::getline(body_msg, line))
-                {
-			        chunk_size = strtol(line.c_str(), NULL, 16);
-			        current_size = 0;
-		        }
-            }
-            SetBody(body);
-        }
-    }
-    else
-        SetBody(message_body);
-    _status = 0;
-    return;
-}
 
-std::map<std::string, std::string>  _headers;
-std::string                         _version;
-std::string                         _body;
+    std::map<std::string, std::string>  _headers;
+    std::string                         _version;
+    std::string                         _body;
 
-int _status;
-int _method;
-Uri _uri;
-size_t _length;
+    int _status;
+    int _method;
+    Uri _uri;
+    size_t _length;
 
-
-std::string _index;
-std::string _root;
-std::string _route;
-std::vector<int> _methods;
-std::string _error_page;
-std::string _error_route;
-std::string _error_root;
-
-
+    std::string _index;
+    std::string _root;
+    std::string _route;
+    std::vector<int> _methods;
+    std::string _error_page;
+    std::string _error_route;
+    std::string _error_root;
 };

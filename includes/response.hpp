@@ -6,7 +6,6 @@
 #include "Uri.hpp"
 #include "request.hpp"
 
-
 long GetFileSize( std::ifstream & Fichier ) 
 { 
     // sauvegarder la position courante 
@@ -61,24 +60,19 @@ std::string status_to_string(int status)
         return "Unknow status code";
 }
 
-
-
-void	exit_error(std::string str);
-
 class Response
 {
-//private:
 public:
 
-int				_method;
-std::string		_version;
-Uri _uri;
-std::map<std::string, std::string>  _headers;
-std::string                         _body;
-int _status;
-size_t	_length;
+	int				_method;
+	std::string		_version;
+	Uri _uri;
+	std::map<std::string, std::string>  _headers;
+	std::string                         _body;
+	int _status;
+	size_t	_length;
 
-std::string _content;
+	std::string _content;
 
 public:
 	/* ----- Constructors ----- */
@@ -88,19 +82,17 @@ public:
 	~Response() {}
     /* ------------------------ */
 
-Uri GetUri() const
-{ return _uri; }
+	Uri GetUri() const
+	{ return _uri; }
 
-
-std::string mime_parser()
-{
-	std::string s = _headers.at("Accept");
-	std::string str;
-	for (std::string::iterator it = s.begin(); *it != ',' && it != s.end(); it++)
-		str += *it;
-	return str;
-}
-
+	std::string mime_parser()
+	{
+		std::string s = _headers.at("Accept");
+		std::string str;
+		for (std::string::iterator it = s.begin(); *it != ',' && it != s.end(); it++)
+			str += *it;
+		return str;
+	}
 
 	std::string getData() const {return this->_content;}
 	size_t getDataSize() const {return this->_content.size();}
@@ -163,6 +155,24 @@ std::string mime_parser()
 		return send(ev_list[i].ident, content.str().c_str(), content.str().size(), 0);
 	}
 
+	void set_cookies(struct kevent *ev_list, int &i, std::string cookie_page)
+	{
+		std::ifstream file;
+		std::stringstream s;
+		std::stringstream content;
+  		file.open("." + cookie_page);
+		if (!file)
+			exit_error("cookie page couldn't be opened");
+		content << file.rdbuf();
+		s << "HTTP/1.1 200 OK\r\n";
+		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
+		s << "Set-Cookie: session_id=42webserv\r\n";
+		s << "Content-Type: text/html\r\n\r\n";	
+		s << content.str();
+		file.close();
+		send(ev_list[i].ident, s.str().c_str(), s.str().size(), 0);
+	}
+
 	void set_error(int status, std::string &content)
 	{
 		size_t start = 0;
@@ -170,7 +180,7 @@ std::string mime_parser()
 			content.replace(start, 10, std::to_string(status));
 	}
 
-	bool send_error(int status, struct kevent *ev_list , int i, std::string error_loc)
+	bool send_error(int status, struct kevent *ev_list, int i, std::string error_loc)
 	{
 		std::string 		file_name;
 		std::ifstream 		file;
