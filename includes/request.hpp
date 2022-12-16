@@ -153,13 +153,15 @@ class Request
     public:
 
 Request() : _version("HTTP/1.1")  {}//: _method(0) {}  // vide par default? --> a voir | 0 pour GET
+Request(std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _error_route, std::string _error_root) :
+                    _version("HTTP/1.1"), _index(_index), _root(_root), _route(_route), _methods(_methods), _error_page(_error_page), _error_route(_error_route), _error_root(_error_root) {}
 ~Request() {}
 
 void SetMethod(int method)
 { _method = method; }
 
 void SetUri(const Uri& uri)
-{ _uri = std::move(uri); }
+{ _uri = uri; }
 
 void SetBody(const std::string& body)
 {
@@ -234,13 +236,14 @@ void string_to_request(const std::string request_string)
     iss.str(start_line);
     iss >> method >> path >> version;   // >> = ' ' donc : GET /info.html HTTP/1.1 --> GET>>/info.html>>HTTP/1.1
     if (!iss.good() && !iss.eof())
-        throw std::invalid_argument("Invalid header format");
+        _status = 400;
     SetMethod(string_to_method(method));
     if (path == "/")
-        path += "index.html";
+        path += _index;
+    std::cout << GREEN << "Je suis path : " << path << RESET << std::endl;
     SetUri(Uri(path));
     if (version.compare(GetVersion()) != 0 && _method == 0)
-        throw std::logic_error("wrong HTTP version");
+        _status = 505;
     iss.clear();  // parse header fields
     iss.str(header_lines);
     while (std::getline(iss, line)) // --> cet overload de getline = gnl en gros
@@ -316,5 +319,15 @@ int _status;
 int _method;
 Uri _uri;
 size_t _length;
+
+
+std::string _index;
+std::string _root;
+std::string _route;
+std::vector<int> _methods;
+std::string _error_page;
+std::string _error_route;
+std::string _error_root;
+
 
 };

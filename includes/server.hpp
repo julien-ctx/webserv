@@ -168,7 +168,45 @@ public:
         this->_clients[i] = 0;
         return close(fd);
     }
-    
+
+
+	bool send_error(int status, struct kevent *ev_list , int i, std::string error_loc)
+	{
+		std::string 		file_name;
+		std::ifstream 		file;
+		std::stringstream 	s;
+		std::stringstream 	file_n;
+		std::stringstream   buffer;
+        std::string         content;
+
+		file_name = "." + error_loc;
+		file.open(file_name);
+		if (!file)
+			std::cout << RED << "Cannot respond with " << status << std::endl << RESET;
+		buffer << file.rdbuf();
+		std::string file_content = buffer.str();
+		std::string ns = file_content;
+		set_error(status, file_content);
+		s << "HTTP/1.1" << " " << status << " " << status_to_string(status) << "\r\n"; 
+		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
+		s << "Content-Type: text/html\r\n\r\n";
+		//content = s.str();
+		s.clear();
+		content += file_content;
+		file.close();
+		int ret = send(ev_list[i].ident, content.c_str(), content.size(), 0);
+       if (status == 408)
+           delete_client(this->_ev_list[i].ident);
+        return ret > 0;
+	}
+
+    void set_error(int status, std::string &content)
+	{
+		size_t start = 0;
+		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
+			content.replace(start, 10, std::to_string(status));
+	}
+
     void binder()
     {
         // Allows kernel to reuse the address. Bind function now works instantaneously
@@ -230,9 +268,9 @@ public:
     }
 
     // Receives request and sets the client ready to send the response
-    Request request_handler(int &i)
+    Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _error_route, std::string _error_root)
     {
-        Request requete;
+        Request requete( _index, _root, _route, _methods, _error_page, _error_route, _error_root);
         
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
@@ -301,8 +339,9 @@ public:
 
     void handle_timeout(int &i)
     {
-        // exit_error("timeout");
         _ev_set.resize(_ev_set.size() + 1);
+        send_error(408, _ev_list, i, _error_root + _error_route + "/" + _error_page);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
     }
 
@@ -329,7 +368,7 @@ public:
                 else if (this->_ev_list[i].flags & EV_CLEAR)
                     handle_timeout(i);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
-                    requete = request_handler(i);
+                    requete = request_handler(i, _index, _root, _route, _methods, _error_page, _error_route, _error_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     rep = response_handler(i, requete);
             }
