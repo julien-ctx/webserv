@@ -146,7 +146,7 @@ public:
 		<html lang=\"en\" >\
 		<h3>" + msg + "</h3>\
 		</html>";
-
+	
 		_status = 200;
 		content << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
 		content << "Content-Length: " << html.size() << "\r\n";
@@ -188,7 +188,6 @@ public:
 		std::stringstream 	file_n;
 		std::stringstream buffer;
 
-
 		file_name = "." + error_loc;
 		file.open(file_name);
 		if (!file)
@@ -197,7 +196,7 @@ public:
 		std::string file_content = buffer.str();
 		set_error(status, file_content);
 		s << _version << " " << status << " " << status_to_string(status) << "\r\n"; 
-		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
+		s << "Content-Length: " <<  file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
 		s.clear();

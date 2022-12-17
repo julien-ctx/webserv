@@ -190,10 +190,9 @@ public:
 			std::cout << RED << "Cannot respond with " << status << std::endl << RESET;
 		buffer << file.rdbuf();
 		std::string file_content = buffer.str();
-		std::string ns = file_content;
 		set_error(status, file_content);
 		s << "HTTP/1.1" << " " << status << " " << status_to_string(status) << "\r\n"; 
-		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
+		s << "Content-Length: " << file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		s.clear();
 		content += file_content;
