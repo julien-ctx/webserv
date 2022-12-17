@@ -13,6 +13,7 @@
 	<p>By clicking on this page, you allowed the server to set cookies for your session.</p>
 	<div class="container">
 		<button onclick="printCookies()" class="cookie-button">Print Cookies</button><br>
+		<button onclick="clearCookies()" class="cookie-button">Clear Cookies</button><br>
 		<div id="cookies"></div>
 	</div>
 	<script>
@@ -20,6 +21,17 @@
 		{
 			var cookies = document.cookie;
 			document.getElementById("cookies").innerHTML = cookies;
+		}
+		function clearCookies()
+		{
+			var cookies = document.cookie.split(";");
+			for (var i = 0; i < cookies.length; i++)
+			{
+				var cookie = cookies[i];
+				var equal = cookie.indexOf("=");
+				var key = equal > -1 ? cookie.substr(0, equal) : cookie;
+				document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    		}
 		}
 	</script>
 	<footer>
