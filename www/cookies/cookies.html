@@ -12,10 +12,16 @@
 	<h1><a href="/">Webserv</a></h1>
 	<p>By clicking on this page, you allowed the server to set cookies for your session.</p>
 	<div class="center">
-		<a href="/">
-			<button class="home-button">Home</button>
-		</a>
+		<button onclick="printCookies()" class="cookie-button">Print Cookies</button><br>
+		<div id="cookies"></div>
 	</div>
+	<script>
+		function printCookies()
+		{
+			var cookies = document.cookie;
+			document.getElementById("cookies").innerHTML = cookies;
+		}
+	</script>
 	<footer>
 		<div class="wave"></div>
 		<div class="wave"></div>
