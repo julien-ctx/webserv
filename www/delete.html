@@ -24,7 +24,7 @@
 		const filename = document.getElementById('filename').value;
 		if (filename.trim() === '')
 			return;
-			fetch(`${filename}`, {
+		fetch(`${filename}`, {
 			method: 'DELETE'
 		})
 		.then(response => response.text())
