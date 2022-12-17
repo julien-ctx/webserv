@@ -45,13 +45,7 @@ h3
 	text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
 }
 
-#cookies
-{
-    font-size: 120%;
-	text-align: center;
-	font-family: 'Courier New', Courier, monospace;
-	color:rgb(226, 226, 226);
-}
+
 
 
 p
@@ -60,7 +54,7 @@ p
 	text-align: center;
 	font-family: 'Courier New', Courier, monospace;
 	color:rgb(226, 226, 226);
-	text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
+	text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px;
 }
 
 label
@@ -84,9 +78,9 @@ label
 
 .cookie-button
 {
-    position: static;
+    position: relative;
     margin: auto;
-    width: 170px;
+    width: 150px;
     height: 50px;
     cursor: pointer;
     border: none;
@@ -97,8 +91,26 @@ label
     box-shadow: inset 0px 3px 5px rgba(255,255,255,0.5), 0px 0px 10px rgba(0,0,0,0.15);
     background: linear-gradient(45deg, rgba(2,0,36,0) 5%, rgba(255,255,255,0) 6%, rgb(255, 255, 255, 0) 9%,  rgba(255,255,255,0));
     background-size: 150%;
-    margin-top: 100%;
-    transition: 1s; 
+    transition: 1s;
+}
+  
+#cookies
+{
+    position: static;
+    top: 100%;
+    left: 0;
+    font-size: 110%;
+	text-align: center;
+	font-family: 'Courier New', Courier, monospace;
+	color:rgb(226, 226, 226);
+	/* text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px; */
+}
+
+.container
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 a
