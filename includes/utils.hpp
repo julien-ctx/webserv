@@ -28,6 +28,7 @@
 #define MAX_SERVERS 5
 
 #define DEBUG(x) std::cout << CYAN << x << std::endl << RESET;
+#define DEBUG2(x) std::cout << MAGENTA << x << std::endl << RESET;
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */
