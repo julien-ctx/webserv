@@ -166,7 +166,7 @@ public:
 		content << file.rdbuf();
 		s << "HTTP/1.1 200 OK\r\n";
 		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
-		s << "Set-Cookie: session_id=42webserv\r\n";
+		s << "Set-Cookie: session_id=marwan\r\n";
 		s << "Content-Type: text/html\r\n\r\n";	
 		s << content.str();
 		file.close();

@@ -19,17 +19,17 @@
 	<script>
 		function printCookies()
 		{
-			var cookies = document.cookie;
+			let cookies = document.cookie;
 			document.getElementById("cookies").innerHTML = cookies;
 		}
 		function clearCookies()
 		{
-			var cookies = document.cookie.split(";");
+			let cookies = document.cookie.split(";");
 			for (var i = 0; i < cookies.length; i++)
 			{
-				var cookie = cookies[i];
-				var equal = cookie.indexOf("=");
-				var key = equal > -1 ? cookie.substr(0, equal) : cookie;
+				let cookie = cookies[i];
+				let equal = cookie.indexOf("=");
+				let key = equal > -1 ? cookie.substr(0, equal) : cookie;
 				document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
     		}
 		}
