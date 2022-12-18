@@ -198,7 +198,7 @@ public:
     size_t GetBodyLength() const
     { return _body.length(); }
 
-    // transforme une string en une requete
+    // transforme une string en une request
     void string_to_request(const std::string request_string)
     {
         std::string         start_line, header_lines, message_body;

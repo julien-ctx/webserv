@@ -266,7 +266,7 @@ public:
     // Receives request and sets the client ready to send the response
     Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _error_route, std::string _error_root)
     {
-        Request requete( _index, _root, _route, _methods, _error_page, _error_route, _error_root);
+        Request request( _index, _root, _route, _methods, _error_page, _error_route, _error_root);
         
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
@@ -276,55 +276,55 @@ public:
         else
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf, ret);
-        requete.string_to_request(_full_rq);
-        if (requete._length)
-            _full_len = requete._length;
+        request.string_to_request(_full_rq);
+        if (request._length)
+            _full_len = request._length;
 
         // Error handling
-        if (std::find(_methods.begin(), _methods.end(), requete.GetMethod()) == _methods.end())
+        if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
         {
             // Set 401 error here
             exit_error("Unauthorized method"); // Remove the exit as soon as error management is fixed
             setReadyToWrite(i);
         }
-        else if (requete._length > _max_size)
+        else if (request._length > _max_size)
         {
             // Set 413 error here
             exit_error("request size too big");
             setReadyToWrite(i);
         }
-        else if (((requete.GetBodyLength() == _full_len) && requete.GetMethod() == POST)
-                || (requete.GetMethod() == GET) || (requete.GetMethod() == DELETE))
+        else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
+                || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
         {
             // DEBUG(_full_rq);
             setReadyToWrite(i);
         }
-        return requete;
+        return request;
     }
 
     // Sends the response and sets the socket ready to read the request again
-    Response response_handler(int &i, Request requete)
+    Response response_handler(int &i, Request request)
     {
-        CGI cgi(_root + _route + requete.GetUri().GetPath(), _root + _route + _cgi_dir);
-        Response rep(requete);
+        CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
+        Response rep(request);
 		if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page);
         else if (rep._status != 0)
         {
-            rep.send_error(requete._status, _ev_list, i, _error_root + _error_route + "/" + _error_page);
+            rep.send_error(request._status, _ev_list, i, _error_root + _error_route + "/" + _error_page);
             rep._status = 0;
         }
         else
         {
-            if (cgi.isCGI(requete, _cgi_ext))
-                cgi.execute(this->_ev_list[i].ident, requete);
+            if (cgi.isCGI(request, _cgi_ext))
+                cgi.execute(this->_ev_list[i].ident, request);
             else
             {
-                if (requete._method == GET)
+                if (request._method == GET)
                     rep.methodGET(_ev_list, i, _error_root + _error_route + "/" + _error_page, _root + _route);
-                else if (requete._method == DELETE)
+                else if (request._method == DELETE)
                     rep.methodDELETE(_ev_list, i, _root + _route + _cgi_dir);
-                else if (requete._method > 2)
+                else if (request._method > 2)
                     rep.send_error(405, _ev_list, i, _error_root + _error_route + "/" + _error_page);
             }
         }
@@ -345,8 +345,8 @@ public:
 
     void launch()
     {
-        Request     requete;
-        Response    rep;
+        Request     request;
+        Response    resp;
         
         // Registers interest in READ on server's fd and adds the event to kqueue.
         EV_SET(&_ev_set.back(), this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
@@ -356,7 +356,8 @@ public:
             kevent(this->_kq, _ev_set.data(), _ev_set.size(), NULL, 0, NULL);
             // Waits for an event to occur and returns number of events caught
             int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
-            _ev_set.clear();
+            if (!_rq)
+                _ev_set.clear();
             for (int i = 0; i < event_nb; i++)
             {
                 if (this->_ev_list[i].flags & EV_EOF)
@@ -366,9 +367,9 @@ public:
                 else if (this->_ev_list[i].flags & EV_CLEAR)
                     handle_timeout(i);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
-                    requete = request_handler(i, _index, _root, _route, _methods, _error_page, _error_route, _error_root);
+                    request = request_handler(i, _index, _root, _route, _methods, _error_page, _error_route, _error_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
-                    rep = response_handler(i, requete);
+                    resp = response_handler(i, request);
             }
         }
     }
