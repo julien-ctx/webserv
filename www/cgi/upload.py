@@ -21,7 +21,7 @@ if __name__ == "__main__":
 			for line in split:
 				if b"filename=" in line:
 					filename = line.split(b'filename="', 1)[1].split(b'"')[0]
-			if content and filename:
+			if filename:
 				if not os.path.isdir(cgi_dir):
 					os.makedirs(cgi_dir)	
 				if (os.path.isfile(cgi_dir + filename)):

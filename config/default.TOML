@@ -14,7 +14,7 @@
         cgi_dir = "/cgi/uploads"
 
     [[server.location]]
-        route = "/error_pages"
+        route = "/status"
         root = "/www"
         error_page = "error.html"
     

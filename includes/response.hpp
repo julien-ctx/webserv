@@ -155,6 +155,14 @@ public:
 		return send(ev_list[i].ident, content.str().c_str(), content.str().size(), 0);
 	}
 
+	void send_redirection(struct kevent *ev_list, int &i, std::string redir_loc)
+	{
+		std::string response;
+		response = "HTTP/1.1 301 Moved Permanently\r\n";
+		response += "Location: " + redir_loc + "\r\n\r\n";
+		send(ev_list[i].ident, response.c_str(), response.size(), 0);
+	}
+
 	void set_cookies(struct kevent *ev_list, int &i, std::string cookie_page)
 	{
 		std::ifstream file;

@@ -36,6 +36,8 @@ private:
     std::string _cookie_root;
     std::string _cookie_route;
     std::string _cookie_page;
+    std::string _redirected;
+    std::string _redir_loc;
 
     // Event queue values
     int _kq;
@@ -63,6 +65,10 @@ public:
 		_addr_name = _config->at_key_parent("address", parent)->_string;
         _loc_nb = _config->at_key_parent("location", parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
+
+        // Change later
+        _redirected = "redirect.html";
+        _redir_loc = "https://www.google.com/";
 
         for (int index = 0; index < _loc_nb; index++)
         {
@@ -307,7 +313,9 @@ public:
     {
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
-		if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
+        if (rep.GetUri().GetPath() == _error_route + "/" + _redirected)
+            rep.send_redirection(_ev_list, i, _redir_loc);
+		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page);
         else if (rep._status != 0)
         {
