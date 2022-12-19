@@ -58,7 +58,8 @@ public:
 			exit_error("fork function failed");
 		else if (!id)
 		{
-			pipe(in);
+			if (pipe(in) < 0)
+				exit_error("pipe function failed");
 			write(in[1], (rq.GetBody() + _cgi_dir).c_str(), rq.GetBodyLength() + _cgi_dir.size());
 			close(in[1]);
 

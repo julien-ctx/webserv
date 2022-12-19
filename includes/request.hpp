@@ -152,8 +152,8 @@ class Request
 public:
 
     Request() : _version("HTTP/1.1")  {}//: _method(0) {}  // vide par default? --> a voir | 0 pour GET
-    Request(std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _error_route, std::string _error_root) :
-                        _version("HTTP/1.1"), _index(_index), _root(_root), _route(_route), _methods(_methods), _error_page(_error_page), _error_route(_error_route), _error_root(_error_root) {}
+    Request(std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _status_route, std::string _status_root) :
+                        _version("HTTP/1.1"), _index(_index), _root(_root), _route(_route), _methods(_methods), _error_page(_error_page), _status_route(_status_route), _status_root(_status_root) {}
     ~Request() {}
 
     void SetMethod(int method)
@@ -320,6 +320,6 @@ public:
     std::string _route;
     std::vector<int> _methods;
     std::string _error_page;
-    std::string _error_route;
-    std::string _error_root;
+    std::string _status_route;
+    std::string _status_root;
 };

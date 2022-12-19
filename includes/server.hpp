@@ -31,8 +31,8 @@ private:
     std::string _route;
     std::vector<int> _methods;
     std::string _error_page;
-    std::string _error_route;
-    std::string _error_root;
+    std::string _status_route;
+    std::string _status_root;
     std::string _cookie_root;
     std::string _cookie_route;
     std::string _cookie_page;
@@ -105,10 +105,10 @@ public:
                 if (_error_page.size())
                     exit_error("several error pages");
                 _error_page = _config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string;
-                _error_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
-                if (_error_route == "/") _error_route = "";
-                _error_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
-                if (_error_root == "/") _error_root = "";
+                _status_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                if (_status_route == "/") _status_route = "";
+                _status_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                if (_status_root == "/") _status_root = "";
             }
             else if (_config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string.size())
             {
@@ -270,9 +270,9 @@ public:
     }
 
     // Receives request and sets the client ready to send the response
-    Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _error_route, std::string _error_root)
+    Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _status_route, std::string _status_root)
     {
-        Request request( _index, _root, _route, _methods, _error_page, _error_route, _error_root);
+        Request request( _index, _root, _route, _methods, _error_page, _status_route, _status_root);
         
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
@@ -283,6 +283,7 @@ public:
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf, ret);
         request.string_to_request(_full_rq);
+        // DEBUG(request.GetUri().GetPath());
         if (request._length)
             _full_len = request._length;
 
@@ -293,12 +294,12 @@ public:
             exit_error("Unauthorized method"); // Remove the exit as soon as error management is fixed
             setReadyToWrite(i);
         }
-        else if (request._length > _max_size)
-        {
-            // Set 413 error here
-            exit_error("request size too big");
-            setReadyToWrite(i);
-        }
+        // else if (request._length > _max_size)
+        // {
+        //     // Set 413 error here
+        //     exit_error("request size too big");
+        //     setReadyToWrite(i);
+        // }
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
         {
@@ -313,13 +314,13 @@ public:
     {
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
-        if (rep.GetUri().GetPath() == _error_route + "/" + _redirected)
+        if (rep.GetUri().GetPath() == _status_route + "/" + _redirected)
             rep.send_redirection(_ev_list, i, _redir_loc);
 		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page);
         else if (rep._status != 0)
         {
-            rep.send_error(request._status, _ev_list, i, _error_root + _error_route + "/" + _error_page);
+            rep.send_error(request._status, _ev_list, i, _status_root + _status_route + "/" + _error_page);
             rep._status = 0;
         }
         else
@@ -329,11 +330,11 @@ public:
             else
             {
                 if (request._method == GET)
-                    rep.methodGET(_ev_list, i, _error_root + _error_route + "/" + _error_page, _root + _route);
+                    rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, _root + _route);
                 else if (request._method == DELETE)
                     rep.methodDELETE(_ev_list, i, _root + _route + _cgi_dir);
                 else if (request._method > 2)
-                    rep.send_error(405, _ev_list, i, _error_root + _error_route + "/" + _error_page);
+                    rep.send_error(405, _ev_list, i, _status_root + _status_route + "/" + _error_page);
             }
         }
         _rq = false;
@@ -347,7 +348,7 @@ public:
     {
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-        send_error(408, _ev_list, i, _error_root + _error_route + "/" + _error_page);
+        send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
     }
 
@@ -378,7 +379,7 @@ public:
                 else if (this->_ev_list[i].flags & EV_CLEAR)
                     handle_timeout(i);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
-                    request = request_handler(i, _index, _root, _route, _methods, _error_page, _error_route, _error_root);
+                    request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
                     resp = response_handler(i, request);
             }

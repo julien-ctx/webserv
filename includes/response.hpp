@@ -6,20 +6,6 @@
 #include "Uri.hpp"
 #include "request.hpp"
 
-long GetFileSize( std::ifstream & File ) 
-{ 
-    // sauvegarder la position courante 
-    long pos = File.tellg(); 
-    // se placer en fin de File 
-    File.seekg( 0 , std::ios_base::end ); 
-    // récupérer la nouvelle position = la taille du File 
-    long size = File.tellg() ; 
-    // restaurer la position initiale du File 
-    File.seekg( pos,  std::ios_base::beg ) ;
-	File.close(); 
-    return size ; 
-}
-
 std::string status_to_string(int status)
 {
     if (status == 100)
@@ -46,8 +32,8 @@ std::string status_to_string(int status)
         return "Method Not Allowed";
     else if (status == 408 )
         return "Request Timeout";
-    else if (status == 418)
-        return "I'm a teapot";
+   else if (status == 418)
+       return "I'm a teapot";
     else if (status == 500)
         return "Internal Server Error";
     else if (status == 501)
@@ -97,16 +83,6 @@ public:
 	std::string getData() const {return this->_content;}
 	size_t getDataSize() const {return this->_content.size();}
 
-	int fileSize(std::string const path)
-	{
-		std::ifstream file;
-		file.open(path, std::ios_base::binary);
-		file.seekg(0, std::ios_base::end);
-		int size = file.tellg();
-		file.close();
-		return size;
-	}
-
 	int methodGET(struct kevent *ev_list , int i, std::string error_loc, std::string path)
 	{
 		std::stringstream	s;
@@ -117,12 +93,13 @@ public:
 		s.clear();
 		buffer.clear();
 		file.open("." + path + _uri._path);
+		// DEBUG2("Response GET");
 		if (!file)
 			return send_error(404, ev_list, i, error_loc);
 		_status = 200;
 		buffer << file.rdbuf();
 		s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
-		s << "Content-Length: " << GetFileSize(file) << "\r\n";
+		s << "Content-Length: " << buffer.str().size() << "\r\n";
 		s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n";
 		_content = s.str();
 		this->_content += buffer.str();
@@ -173,7 +150,7 @@ public:
 			exit_error("cookie page couldn't be opened");
 		content << file.rdbuf();
 		s << "HTTP/1.1 200 OK\r\n";
-		s << "Content-Length: " <<  GetFileSize(file) << "\r\n";
+		s << "Content-Length: " <<  content.str().size() << "\r\n";
 		s << "Set-Cookie: session_id=marwan\r\n";
 		s << "Content-Type: text/html\r\n\r\n";	
 		s << content.str();
