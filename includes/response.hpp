@@ -83,18 +83,52 @@ public:
 	std::string getData() const {return this->_content;}
 	size_t getDataSize() const {return this->_content.size();}
 
+	int autoindex(struct kevent *ev_list , int i, std::ifstream &file, std::string &path)
+	{
+		std::stringstream headers;
+		std::string html;
+		DIR *dir = opendir(path.c_str());
+		struct dirent *entry;
+
+		html = "<!DOCTYPE html>\n";
+		html += "<html lang=\"en\" >\n";
+		html += "<head>\n";
+		html += "	<meta charset=\"UTF-8\">\n";
+		html += "	<title>Webserv | Errors Index</title>\n";
+		html += "	<link rel=\"stylesheet\" type=\"text/css\" href=\"./style.css\"/>\n";
+		html += "	<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n";
+		html += "</head>";
+		html += "<ul>";
+		while ((entry = readdir(dir)) != nullptr)
+		{
+			std::string name(entry->d_name);
+			html += "<li><a href='" + name + "'>" + name + "</a></li>";;
+		}
+		html += "</ul></html>";
+
+		headers << "HTTP/1.1 200 OK\r\n";
+		headers << "Content-Length: " <<  html.size() << "\r\n";
+		headers << "Content-Type: text/html\r\n\r\n";
+		closedir(dir);
+		file.close();
+		return send(ev_list[i].ident, (headers.str() + html).c_str(), (headers.str() + html).size(), 0);
+	}
+
 	int methodGET(struct kevent *ev_list , int i, std::string error_loc, std::string path)
 	{
 		std::stringstream	s;
 		std::ifstream 		file;
 		std::stringstream buffer;
+		std::string file_name;
+		struct stat sb;
 
 		_content.clear();
-		s.clear();
-		buffer.clear();
-		file.open("." + path + _uri._path);
-		// DEBUG2("Response GET");
-		if (!file)
+		file_name = "." + path + _uri._path;
+		file.open(file_name);
+
+    	if (stat(file_name.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
+			return autoindex(ev_list, i, file, file_name);
+		else if (!file)
 			return send_error(404, ev_list, i, error_loc);
 		_status = 200;
 		buffer << file.rdbuf();

@@ -12,11 +12,13 @@
         cgi_extension = ["py", "sh", "pl"]
         uploadable = true
         cgi_dir = "/cgi/uploads"
+        autoindex = true
 
     [[server.location]]
         route = "/status"
         root = "/www"
         error_page = "error.html"
+        redirect = "redirect.html"
     
     [[server.location]]
         route = "/cookies"

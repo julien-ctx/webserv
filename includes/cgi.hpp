@@ -51,6 +51,7 @@ public:
 	{
 		int out[2];
 		int in[2];
+		fcntl(in[1], F_SETFL, O_NONBLOCK);
 		if (pipe(out) < 0)
 			exit_error("pipe function failed");
 		int id = fork();
@@ -107,13 +108,14 @@ public:
 				exit_error("Invalid CGI program");
 		}
 		waitpid(0, NULL, 0);
-		char buf[2];
-		std::memset(buf, 0, 1);
+		char buf[BUFFER_SIZE];
+		std::memset(buf, 0, BUFFER_SIZE);
 		close(out[1]);
-		while (read(out[0], buf, 1) > 0)
+		int ret = 0;
+		while ((ret = read(out[0], buf, BUFFER_SIZE)) > 0)
 		{
-			buf[1] = 0;
-			this->_output += std::string(buf);
+			buf[ret] = 0;
+			this->_output += std::string(buf, ret);
 		}
 		close(out[0]);
 		return sendOutput(fd);

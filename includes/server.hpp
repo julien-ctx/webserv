@@ -283,7 +283,6 @@ public:
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf, ret);
         request.string_to_request(_full_rq);
-        // DEBUG(request.GetUri().GetPath());
         if (request._length)
             _full_len = request._length;
 
@@ -346,6 +345,7 @@ public:
 
     void handle_timeout(int &i)
     {
+        DEBUG("Timeout");
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);

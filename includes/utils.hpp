@@ -12,6 +12,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <dirent.h>
 #include <sys/socket.h>
 #include <cstdio>
 #include <sys/un.h>
