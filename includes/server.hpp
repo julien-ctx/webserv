@@ -36,8 +36,9 @@ private:
     std::string _cookie_root;
     std::string _cookie_route;
     std::string _cookie_page;
-    std::string _redirected;
+    std::string _redirect;
     std::string _redir_loc;
+    bool _autoindex;
 
     // Event queue values
     int _kq;
@@ -65,9 +66,6 @@ public:
 		_addr_name = _config->at_key_parent("address", parent)->_string;
         _loc_nb = _config->at_key_parent("location", parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
-
-        // Change later
-        _redirected = "redirect.html";
         _redir_loc = "https://www.google.com/";
 
         for (int index = 0; index < _loc_nb; index++)
@@ -99,6 +97,8 @@ public:
                     else
                         exit_error("some allowed methods are not handled by the server");
                 }
+                if (_config->at_key_parent("autoindex", parent + ".location." + std::to_string(index)))
+                    _autoindex = _config->at_key_parent("autoindex", parent + ".location." + std::to_string(index))->_bool;
             }
             else if (_config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string.size())
             {
@@ -109,6 +109,8 @@ public:
                 if (_status_route == "/") _status_route = "";
                 _status_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
                 if (_status_root == "/") _status_root = "";
+                if ( _config->at_key_parent("redirect", parent + ".location." + std::to_string(index)))
+                    _redirect = _config->at_key_parent("redirect", parent + ".location." + std::to_string(index))->_string;
             }
             else if (_config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string.size())
             {
@@ -313,7 +315,7 @@ public:
     {
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
-        if (rep.GetUri().GetPath() == _status_route + "/" + _redirected)
+        if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
             rep.send_redirection(_ev_list, i, _redir_loc);
 		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page);
