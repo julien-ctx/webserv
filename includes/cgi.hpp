@@ -51,7 +51,6 @@ public:
 	{
 		int out[2];
 		int in[2];
-		fcntl(in[1], F_SETFL, O_NONBLOCK);
 		if (pipe(out) < 0)
 			exit_error("pipe function failed");
 		int id = fork();
@@ -61,10 +60,12 @@ public:
 		{
 			if (pipe(in) < 0)
 				exit_error("pipe function failed");
-			write(in[1], (rq.GetBody() + _cgi_dir).c_str(), rq.GetBodyLength() + _cgi_dir.size());
+			fcntl(in[1], F_SETFL, O_NONBLOCK);
+			ssize_t written = write(in[1], (rq.GetBody() + _cgi_dir).c_str(), rq.GetBodyLength() + _cgi_dir.size());
 			close(in[1]);
-
 			close(out[0]);
+			if (written != (ssize_t)(rq.GetBodyLength() + _cgi_dir.size()))
+				exit(1);
 			dup2(in[0], STDIN_FILENO);
 			close(in[0]);
 			dup2(out[1], STDOUT_FILENO);

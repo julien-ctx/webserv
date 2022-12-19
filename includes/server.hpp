@@ -348,8 +348,12 @@ public:
         DEBUG("Timeout");
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-        send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);
-        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_TIMER, EV_DELETE, 0, 0, NULL);
+        // // setReadyToWrite(i);
+        // _rq = true;
+        // DEBUG2(check_client(this->_ev_list[i].ident));
+        // send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_TIMER, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
+        //  delete_client(this->_ev_list[i].ident);
     }
 
     void launch()
