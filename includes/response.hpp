@@ -83,22 +83,21 @@ public:
 	std::string getData() const {return this->_content;}
 	size_t getDataSize() const {return this->_content.size();}
 
-	int autoindex(struct kevent *ev_list , int i, std::ifstream &file, std::string &path, std::string &root)
+	int autoindex_listing(struct kevent *ev_list , int i, std::ifstream &file, std::string &path, std::string &root, bool &autoindex)
 	{
 		std::stringstream headers;
 		std::string html;
 		DIR *dir = opendir(path.c_str());
 		struct dirent *entry;
 
-		// Retrieves CSS
-		ifstream css;
+		std::ifstream css;
 		css.open("." + root + "/style.css");
 
 		html = "<!DOCTYPE html>\n";
 		html += "<html lang=\"en\" >\n";
 		html += "<head>\n";
 		html += "	<meta charset=\"UTF-8\">\n";
-		html += "	<title>Webserv | Errors Index</title>\n";
+		html += "	<title>Webserv | Autoindex</title>\n";
 		html += "	<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n";
 		if (css)
 		{
@@ -110,16 +109,21 @@ public:
 			css.close();
 		}
 		html += "</head>\n";
-		html += "<h1>" + _uri._path + "</h1>\n";
-		html += "<nav>";
-		html += "<ul>";
-		while ((entry = readdir(dir)) != nullptr)
+		html += "<h1 class=\"smaller-h1\">" + _uri._path + "</h1>\n";
+		if (autoindex)
 		{
-			std::string name(entry->d_name);
-			html += "<li><a href='" + _uri._path + "/" + name + "'>" + name + "</a></li>\n";;
+			html += "<nav>";
+			html += "<ul>";
+			while ((entry = readdir(dir)) != nullptr)
+			{
+				std::string name(entry->d_name);
+				html += "<li><a href='" + _uri._path + "/" + name + "'>" + name + "</a></li>\n";;
+			}
+			html += "</ul>\n</nav>\n";
 		}
-		html += "</ul>\n</nav>\n</html>\n";
-
+		else
+			html += "<p>Directory listing is not activated</p>";
+		html += "</html>\n";
 		headers << "HTTP/1.1 200 OK\r\n";
 		headers << "Content-Length: " <<  html.size() << "\r\n";
 		headers << "Content-Type: text/html\r\n\r\n";
@@ -128,7 +132,7 @@ public:
 		return send(ev_list[i].ident, (headers.str() + html).c_str(), (headers.str() + html).size(), 0);
 	}
 
-	int methodGET(struct kevent *ev_list , int &i, std::string error_loc, std::string path)
+	int methodGET(struct kevent *ev_list , int &i, std::string error_loc, std::string path, bool &autoindex)
 	{
 		std::stringstream	s;
 		std::ifstream 		file;
@@ -141,7 +145,7 @@ public:
 		file.open(file_name);
 
     	if (stat(file_name.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
-			return autoindex(ev_list, i, file, file_name, path);
+			return autoindex_listing(ev_list, i, file, file_name, path, autoindex);
 		else if (!file)
 			return send_error(404, ev_list, i, error_loc);
 		_status = 200;

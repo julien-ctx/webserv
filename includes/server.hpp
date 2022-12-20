@@ -279,7 +279,6 @@ public:
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
-        DEBUG2(_buf);
         if (ret < 0)
             exit_error("recv function failed");
         else
@@ -304,7 +303,7 @@ public:
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
         {
-            DEBUG(_full_rq);
+            // DEBUG(_full_rq);
             set_write(i);
         }
         return request;
@@ -315,7 +314,12 @@ public:
     {
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
-        if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
+        if (*(rep.GetUri().GetPath().end() - 1) == '/')
+        {
+            rep._uri._path.pop_back();
+            rep.send_redirection(_ev_list, i, rep.GetUri().GetPath()); 
+        }
+        else if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
             rep.send_redirection(_ev_list, i, _redir_loc);
 		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page);
@@ -331,7 +335,7 @@ public:
             else
             {
                 if (request._method == GET)
-                    rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, _root + _route);
+                    rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, _root + _route, _autoindex);
                 else if (request._method == DELETE)
                     rep.methodDELETE(_ev_list, i, _root + _route + _cgi_dir);
                 else if (request._method > 2)
@@ -347,7 +351,7 @@ public:
 
     void handle_timeout(int &i)
     {
-        DEBUG("Timeout");
+        // DEBUG("Timeout");
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         // // set_write(i);

@@ -18,6 +18,11 @@ h1
 	text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px;
 }
 
+.smaller-h1
+{
+    font-size: 300%;
+}
+
 h2
 {
 	font-size: 200%;
