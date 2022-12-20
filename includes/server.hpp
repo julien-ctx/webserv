@@ -262,7 +262,7 @@ public:
         EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
     }
 
-    void setReadyToWrite(int &i)
+    void set_write(int &i)
     {
         _full_rq = "";
         _rq = true;
@@ -293,19 +293,19 @@ public:
         {
             // Set 401 error here
             exit_error("Unauthorized method"); // Remove the exit as soon as error management is fixed
-            setReadyToWrite(i);
+            set_write(i);
         }
         // else if (request._length > _max_size)
         // {
         //     // Set 413 error here
         //     exit_error("request size too big");
-        //     setReadyToWrite(i);
+        //     set_write(i);
         // }
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
         {
             // DEBUG(_full_rq);
-            setReadyToWrite(i);
+            set_write(i);
         }
         return request;
     }
@@ -350,7 +350,7 @@ public:
         DEBUG("Timeout");
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-        // // setReadyToWrite(i);
+        // // set_write(i);
         // _rq = true;
         // DEBUG2(check_client(this->_ev_list[i].ident));
         // send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);
