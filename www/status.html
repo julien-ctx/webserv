@@ -18,8 +18,19 @@
 		 	<li>
 				<a href="./fakepage.html">Error 404</a>
 		  	</li>
+			<li>
+				<a href="#" onclick="PUTRequest()">Error 405</a>
+		  	</li>
 		</ul>
-	  </nav>
+	</nav>
+	<script>
+		function PUTRequest()
+		{
+			fetch("unexistingpage.html", {
+				method: 'PUT'
+			})
+		}
+	</script>
 	<div class="center">
 		<a href="/">
 			<button class="home-button">Home</button>

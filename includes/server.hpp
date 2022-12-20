@@ -279,6 +279,7 @@ public:
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        DEBUG2(_buf);
         if (ret < 0)
             exit_error("recv function failed");
         else
@@ -288,7 +289,6 @@ public:
         if (request._length)
             _full_len = request._length;
 
-        // Error handling
         if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
         {
             // Set 401 error here
@@ -304,7 +304,7 @@ public:
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
         {
-            // DEBUG(_full_rq);
+            DEBUG(_full_rq);
             set_write(i);
         }
         return request;
