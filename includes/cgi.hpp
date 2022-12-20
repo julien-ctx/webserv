@@ -65,7 +65,7 @@ public:
 			close(in[1]);
 			close(out[0]);
 			if (written != (ssize_t)(rq.GetBodyLength() + _cgi_dir.size()))
-				exit(1);
+				exit_error("Size different CGI");
 			dup2(in[0], STDIN_FILENO);
 			close(in[0]);
 			dup2(out[1], STDOUT_FILENO);

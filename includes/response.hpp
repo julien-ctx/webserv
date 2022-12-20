@@ -43,7 +43,7 @@ std::string status_to_string(int status)
     else if (status == 505)
         return "HTTP Version Not Supported";
     else 
-        return "Unknow status code";
+        return "Unknown status code";
 }
 
 class Response

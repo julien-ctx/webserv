@@ -4,6 +4,339 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Webserv | File</title>
+	<style>
+		body, html
+		{
+			margin: auto;
+			font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+			overflow: auto;
+			background: linear-gradient(315deg, rgb(168, 61, 161) 3%, rgba(60,132,206,1) 38%, rgb(48, 80, 238) 68%, rgba(255,25,25,1) 98%);
+			animation: gradient 15s ease infinite;
+			background-size: 400% 400%;
+			background-attachment: fixed;
+		}
+
+		h1
+		{
+			font-size: 500%;
+			text-align: center;
+			font-family: 'Courier New', Courier, monospace;
+			color:rgb(226, 226, 226);
+			text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px;
+		}
+
+		.smaller-h1
+		{
+			font-size: 300%;
+		}
+
+		h2
+		{
+			font-size: 200%;
+			text-align: center;
+			font-family: 'Courier New', Courier, monospace;
+			color:rgb(226, 226, 226);
+			text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
+		}
+
+		h2 a
+		{
+			width: 200px;
+			display: inline-block;
+			text-decoration: underline;
+		}
+
+		h3
+		{
+			font-size: 180%;
+			text-align: center;
+			font-family: 'Courier New', Courier, monospace;
+			color:rgb(226, 226, 226);
+			text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
+		}
+
+
+
+
+		p
+		{
+			font-size: 120%;
+			text-align: center;
+			font-family: 'Courier New', Courier, monospace;
+			color:rgb(226, 226, 226);
+			text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px;
+		}
+
+		label
+		{
+			width: 120px;
+			height: 30px;
+			font-family: 'Courier New', Courier, monospace;
+			color: rgba(255, 255, 255, 0.706);
+			background: linear-gradient(45deg, rgba(2,0,36,0) 5%, rgba(255,255,255,0) 6%, rgb(255, 255, 255, 0) 9%,  rgba(255,255,255,0));
+			background-size: 150%;
+			transition: 1s;
+			font-size: 140%;
+			border-radius: 4px;
+			cursor: pointer;
+			border: none;
+			box-shadow: inset 0px 3px 5px rgba(255,255,255,0.5), 0px 0px 10px rgba(0,0,0,0.15);
+			padding-left: 4px;
+			padding-right: 4px;
+			padding-top: 4px;
+		}
+
+		.cookie-button
+		{
+			position: relative;
+			margin: auto;
+			width: 150px;
+			height: 50px;
+			cursor: pointer;
+			border: none;
+			font-family: 'Courier New', Courier, monospace;
+			color: rgba(255, 255, 255, 0.706);
+			font-size: 140%;
+			border-radius: 4px;
+			box-shadow: inset 0px 3px 5px rgba(255,255,255,0.5), 0px 0px 10px rgba(0,0,0,0.15);
+			background: linear-gradient(45deg, rgba(2,0,36,0) 5%, rgba(255,255,255,0) 6%, rgb(255, 255, 255, 0) 9%,  rgba(255,255,255,0));
+			background-size: 150%;
+			transition: 1s;
+		}
+		
+		#cookies
+		{
+			position: static;
+			top: 100%;
+			left: 0;
+			font-size: 110%;
+			text-align: center;
+			font-family: 'Courier New', Courier, monospace;
+			color:rgb(226, 226, 226);
+			/* text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px; */
+		}
+
+		.container
+		{
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		a
+		{
+			color:white;
+			text-decoration: none;
+		}
+
+		form
+		{
+			text-align: center;
+		}
+
+		.submit-button
+		{
+			width: 120px;
+			height: 30px;
+			font-family: 'Courier New', Courier, monospace;
+			color: rgba(255, 255, 255, 0.706);
+			background: linear-gradient(45deg, rgba(2,0,36,0) 5%, rgba(255,255,255,0) 6%, rgb(255, 255, 255, 0) 9%,  rgba(255,255,255,0));
+			background-size: 150%;
+			transition: 1s;
+			font-size: 150%;
+			border-radius: 4px;
+			cursor: pointer;
+			border: none;
+			margin-top: 2%;
+			text-decoration: underline;
+		}
+
+		div .home-button
+		{
+			margin-top: 100px;
+		}
+
+		.home-button
+		{
+			position: static;
+			margin: auto;
+			width: 150px;
+			height: 50px;
+			cursor: pointer;
+			border: none;
+			font-family: 'Courier New', Courier, monospace;
+			color: rgba(255, 255, 255, 0.706);
+			font-size: 200%;
+			border-radius: 4px;
+			box-shadow: inset 0px 3px 5px rgba(255,255,255,0.5), 0px 0px 10px rgba(0,0,0,0.15);
+			background: linear-gradient(45deg, rgba(2,0,36,0) 5%, rgba(255,255,255,0) 6%, rgb(255, 255, 255, 0) 9%,  rgba(255,255,255,0));
+			background-size: 150%;
+			margin-top: 100%;
+			transition: 1s;
+		}
+		
+		.home-button:hover
+		{
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1), inset 0 0 1px rgba(255, 255, 255, 0.6);
+			background: rgba(255, 255, 255, 0.1);
+			color:white;
+
+			background-position: left;
+			color: white;
+			box-shadow: inset 0px 3px 5px rgba(255,255,255,1), 0px 0px 10px rgba(0,0,0,0.25);
+		}
+		
+		.center
+		{
+			margin: 0;
+			position: absolute;
+			left: 50%;
+			-ms-transform: translate(-50%, -50%);
+			transform: translate(-50%, -50%);
+		}
+
+		@keyframes gradient
+		{
+			0%
+			{
+				background-position: 0% 0%;
+			}
+			50%
+			{
+				background-position: 100% 100%;
+			}
+			100%
+			{
+				background-position: 0% 0%;
+			}
+		}
+
+		.wave
+		{
+			background: rgb(255 255 255 / 25%);
+			border-radius: 1000% 1000% 0 0;
+			position: fixed;
+			width: 200%;
+			height: 12em;
+			animation: wave 10s -3s linear infinite;
+			transform: translate3d(0, 0, 0);
+			opacity: 0.8;
+			bottom: 0;
+			left: 0;
+			z-index: -1;
+		}
+
+		.wave:nth-of-type(2)
+		{
+			bottom: -1.25em;
+			animation: wave 18s linear reverse infinite;
+			opacity: 0.8;
+		}
+
+		.wave:nth-of-type(3)
+		{
+			bottom: -2.5em;
+			animation: wave 20s -1s reverse infinite;
+			opacity: 0.9;
+		}
+
+		@keyframes wave {
+			2%
+			{
+				transform: translateX(1);
+			}
+
+			25%
+			{
+				transform: translateX(-25%);
+			}
+
+			50%
+			{
+				transform: translateX(-50%);
+			}
+
+			75%
+			{
+				transform: translateX(-25%);
+			}
+
+			100%
+			{
+				transform: translateX(1);
+			}
+		}
+
+		.trollface
+		{
+			display: block;
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		footer
+		{
+			position: fixed;
+			left: 0;
+			bottom: 2%;
+			width: 100%;
+			background-color: rgba(255, 255, 255, 0);
+			text-align: center;
+		}
+
+		nav
+		{
+			max-width: 960px;
+			mask-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, #ffffff 25%, #ffffff 75%, rgba(255, 255, 255, 0) 100%);
+			margin: 0 auto;
+			padding: 60px 0;
+		}
+
+		nav ul
+		{
+			text-align: center;
+			background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 25%, rgba(255, 255, 255, 0.2) 75%, rgba(255, 255, 255, 0) 100%);
+			box-shadow: 0 0 25px rgba(0, 0, 0, 0.1), inset 0 0 1px rgba(255, 255, 255, 0.6);
+		}
+
+		nav ul li
+		{
+			list-style-type: none;
+		}
+
+		nav ul
+		{
+			padding: 0;
+		}
+
+		nav ul li a
+		{
+			padding: 1.5%;
+			font-weight: 500;
+			color: rgba(0, 35, 122, 0.5);
+			font-size: 200%;
+			text-decoration: none;
+			display: block;
+			text-align: center;
+			font-family: 'Courier New', Courier, monospace;
+			color:rgb(226, 226, 226);
+			text-shadow: -1px -1px rgb(167, 157, 246), 1px 1px rgb(33, 33, 33), -3px 0 4px 
+		}
+
+		nav ul li a:hover
+		{
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1), inset 0 0 1px rgba(255, 255, 255, 0.6);
+			background: rgba(255, 255, 255, 0.1);
+			color:white;
+			transition: 1s;
+		}
+
+		input[type=text]
+		{
+			border: 2px solid rgb(0, 0, 0);
+			border-radius: 4px;
+		}
+	</style>
 </head>
 
 <body>

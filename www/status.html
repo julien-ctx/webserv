@@ -19,18 +19,24 @@
 				<a href="./fakepage.html">Error 404</a>
 		  	</li>
 			<li>
-				<a href="" onclick="PUTRequest()">Error 405</a>
+				<a href="#" onclick="PUTRequest()">Error 405</a>
 		  	</li>
 		</ul>
 	</nav>
+	<div id="response"></div>
 	<script>
-		function PUTRequest()
-		{
-			fetch("unexistingpage.html", {
-				method: 'PUT'
-			})
-			.catch(error => console.error(error))
-		}
+		function PUTRequest() {
+    		fetch("unexistingpage.html", {
+     			method: 'PUT'
+    		})
+		.then(response => response.text())
+		.then(html => {
+			document.open();
+			document.write(html);
+			document.close();
+		})
+		.catch(error => console.error(error))
+  		}
 	</script>
 	<div class="center">
 		<a href="/">

@@ -290,8 +290,7 @@ public:
 
         if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
         {
-            // Set 401 error here
-            exit_error("Unauthorized method"); // Remove the exit as soon as error management is fixed
+            request._status = 405;
             set_write(i);
         }
         // else if (request._length > _max_size)
@@ -351,7 +350,7 @@ public:
 
     void handle_timeout(int &i)
     {
-        // DEBUG("Timeout");
+        DEBUG("Timeout");
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
         // // set_write(i);
@@ -386,8 +385,8 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].flags & EV_CLEAR)
-                    handle_timeout(i);
+                // else if (this->_ev_list[i].flags & EV_CLEAR)
+                //     handle_timeout(i);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
