@@ -79,9 +79,9 @@ public:
                 _uploadable = _config->at_key_parent("uploadable", parent + ".location." + std::to_string(index))->_bool;
                 _cgi_dir = _config->at_key_parent("cgi_dir", parent + ".location." + std::to_string(index))->_string;
                 _route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
-                if (_route == "/") _route = "";
+                if (_route == "/") _route.clear();
                 _root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
-                if (_root == "/") _root = "";
+                if (_root == "/") _root.clear();
                 size_t size = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
                 for (size_t j = 0; j < size; j++)
                     _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
@@ -106,9 +106,9 @@ public:
                     exit_error("several error pages");
                 _error_page = _config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string;
                 _status_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
-                if (_status_route == "/") _status_route = "";
+                if (_status_route == "/") _status_route.clear();
                 _status_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
-                if (_status_root == "/") _status_root = "";
+                if (_status_root == "/") _status_root.clear();
                 if ( _config->at_key_parent("redirect", parent + ".location." + std::to_string(index)))
                     _redirect = _config->at_key_parent("redirect", parent + ".location." + std::to_string(index))->_string;
             }
@@ -118,9 +118,9 @@ public:
                     exit_error("several cookies pages");
                 _cookie_page = _config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string;
                 _cookie_route =  _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
-                if (_cookie_route == "/") _cookie_route = "";
+                if (_cookie_route == "/") _cookie_route.clear();
                 _cookie_root =  _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
-                if (_cookie_root == "/") _cookie_root = "";
+                if (_cookie_root == "/") _cookie_root.clear();
             }
         }
 
@@ -264,7 +264,7 @@ public:
 
     void set_write(int &i)
     {
-        _full_rq = "";
+        _full_rq.clear();
         _rq = true;
         _full_len = 0;
         _ev_set.resize(_ev_set.size() + 1);
@@ -348,17 +348,11 @@ public:
         return rep;
     }
 
-    void handle_timeout(int &i)
+    void handle_timeout(int &i, Request &request)
     {
         DEBUG("Timeout");
-        _ev_set.resize(_ev_set.size() + 2);
-        EV_SET(&*(this->_ev_set.end() - 2), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-        // // set_write(i);
-        // _rq = true;
-        // DEBUG2(check_client(this->_ev_list[i].ident));
-        // send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);
-        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_TIMER, EV_DELETE | EV_ONESHOT, 0, 0, NULL);
-        //  delete_client(this->_ev_list[i].ident);
+        set_write(i);
+        request._status = 408;
     }
 
     void launch()
@@ -385,8 +379,8 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                // else if (this->_ev_list[i].flags & EV_CLEAR)
-                //     handle_timeout(i);
+                else if (this->_ev_list[i].flags & EV_CLEAR)
+                    handle_timeout(i, request);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
