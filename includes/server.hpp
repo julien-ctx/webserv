@@ -293,7 +293,10 @@ public:
 
         if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
         {
-            request._status = 405;
+            if (request.GetMethod() == GET || request.GetMethod() == POST || request.GetMethod() == DELETE)
+                request._status = 405;
+            else
+                request._status = 501;
             set_write(i);
         }
         // else if (request._length > _max_size)
@@ -340,8 +343,6 @@ public:
                     rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, _root + _route, _autoindex);
                 else if (request._method == DELETE)
                     rep.methodDELETE(_ev_list, i, _root + _route + _cgi_dir);
-                else if (request._method > 2)
-                    rep.send_error(405, _ev_list, i, _status_root + _status_route + "/" + _error_page);
             }
         }
         _rq = 0;
@@ -382,8 +383,8 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].flags & EV_CLEAR)
-                    handle_timeout(i, request);
+                // else if (this->_ev_list[i].flags & EV_CLEAR)
+                //     handle_timeout(i, request);
                 else if (this->_ev_list[i].filter == EVFILT_READ && (!_rq || _rq == 2))
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq == 1)
