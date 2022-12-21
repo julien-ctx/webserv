@@ -8,40 +8,26 @@
 
 std::string status_to_string(int status)
 {
-    if (status == 100)
-        return "Continue";
-    else if (status == 200)
+    if (status == 200) // OK
         return "OK";
-    else if (status == 201)
+    else if (status == 201) // OK
         return "Created";
-    else if (status == 202)
-        return "Accepted";
-    else if (status == 301 )
+    else if (status == 301) // OK
         return "Moved Permanently";
-    else if (status == 302 )
-        return "Found";
-    else if (status == 304 )
-        return "Not Modified";
-    else if (status == 400 )
+    else if (status == 400) // Needs to be done
         return "Bad Request";
-    else if (status == 401)
-         return "Unauthorized";
-    else if (status == 404)
+    else if (status == 404) // OK
         return "Not Found";
-    else if (status == 405 )
+    else if (status == 405) // OK
         return "Method Not Allowed";
-    else if (status == 408 )
+	else if (status == 413) // OK
+        return "Payload Too Large";
+    else if (status == 408) // Being handled
         return "Request Timeout";
-   else if (status == 418)
-       return "I'm a teapot";
-    else if (status == 500)
-        return "Internal Server Error";
-    else if (status == 501)
+    else if (status == 501) // OK
         return "Not Implemented";
-    else if (status == 503)
-        return "Service Unavailable";
-    else if (status == 505)
-        return "HTTP Version Not Supported";
+    else if (status == 505) // Needs to be done
+        return "HTTP Version Not Supported"; 
     else 
         return "Unknown status code";
 }

@@ -42,7 +42,11 @@ public:
 
 	bool sendOutput(uintptr_t &fd)
 	{
-		std::string header = std::string("HTTP/1.1 200 OK\n");
+		std::string header;
+		if (_path.find("upload.py") != string::npos)
+			header = std::string("HTTP/1.1 201 Created\n");
+		else
+			header = std::string("HTTP/1.1 200 OK\n");
 		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\nContent-Type: text/html\r\n\n");
 		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
 	}

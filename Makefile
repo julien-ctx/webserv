@@ -31,6 +31,7 @@ clean:
 
 fclean: clean
 	@rm -rf $(NAME)
+	@rm -rf webserv.dSYM
 	@printf $(RED)"\r\033[K➜ ["$(PROJECT)"] "$(WHITE)"fclean"$(RED)" has been done\n"$(RESET)
 
 re: fclean all
