@@ -202,12 +202,10 @@ public:
 		s << "HTTP/1.1" << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " << file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
-		s.clear();
+        content += s.str();
 		content += file_content;
 		file.close();
 		int ret = send(ev_list[i].ident, content.c_str(), content.size(), 0);
-        if (status == 408)
-           delete_client(this->_ev_list[i].ident);
         return ret > 0;
 	}
 
@@ -274,12 +272,13 @@ public:
     // Receives request and sets the client ready to send the response
     Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _status_route, std::string _status_root)
     {
+        DEBUG("request handler");
         Request request( _index, _root, _route, _methods, _error_page, _status_route, _status_root);
         
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
         _rq = 2;
 
-        int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
+        int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, BUFFER_SIZE);
         if (ret < 0)
             exit_error("recv function failed");
         else
@@ -307,6 +306,7 @@ public:
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
         {
             // DEBUG(_full_rq);
+            DEBUG2("Request full");
             set_write(i);
         }
         return request;
@@ -315,6 +315,7 @@ public:
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request request)
     {
+        DEBUG2("response handler");
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
         if (*(rep.GetUri().GetPath().end() - 1) == '/')
@@ -351,10 +352,19 @@ public:
     }
 
     void handle_timeout(int &i, Request &request)
-    {
+    {(void)request;
         DEBUG("Timeout");
-        set_write(i);
-        request._status = 408;
+        //set_write(i);
+        
+        send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);
+        //delete_client(this->_ev_list[i].ident);
+
+        _ev_set.resize(_ev_set.size() + 1);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL); 
+        // request._method = 0;
+        // response_handler(i, request);
+        //_client(_ev_list[i].ident);
+        // request._status = 408;
     }
 
     void launch()
@@ -381,8 +391,8 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                // else if (this->_ev_list[i].flags & EV_CLEAR)
-                //     handle_timeout(i, request);
+                else if (this->_ev_list[i].flags & EV_CLEAR)
+                    handle_timeout(i, request);
                 else if (this->_ev_list[i].filter == EVFILT_READ && (!_rq || _rq == 2))
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq == 1)
