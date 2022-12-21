@@ -83,13 +83,15 @@ public:
 	std::string getData() const {return this->_content;}
 	size_t getDataSize() const {return this->_content.size();}
 
-	int autoindex_listing(struct kevent *ev_list , int i, std::ifstream &file, std::string &path, std::string &root, bool &autoindex)
+	int autoindex_listing(struct kevent *ev_list , int i, std::ifstream &file, std::string &path, std::string &root, bool &autoindex, std::string error_loc)
 	{
 		std::stringstream headers;
 		std::string html;
 		DIR *dir = opendir(path.c_str());
-		struct dirent *entry;
+		if (!dir)
+			return send_error(403, ev_list, i, error_loc);
 
+		struct dirent *entry;
 		std::ifstream css;
 		css.open("." + root + "/style.css");
 
@@ -145,7 +147,7 @@ public:
 		file.open(file_name);
 
     	if (stat(file_name.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))
-			return autoindex_listing(ev_list, i, file, file_name, path, autoindex);
+			return autoindex_listing(ev_list, i, file, file_name, path, autoindex, error_loc);
 		else if (!file)
 			return send_error(404, ev_list, i, error_loc);
 		_status = 200;
