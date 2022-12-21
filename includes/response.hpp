@@ -194,14 +194,14 @@ public:
 		send(ev_list[i].ident, response.c_str(), response.size(), 0);
 	}
 
-	void set_cookies(struct kevent *ev_list, int &i, std::string cookie_page)
+	int set_cookies(struct kevent *ev_list, int &i, std::string cookie_page, std::string error_loc)
 	{
 		std::ifstream file;
 		std::stringstream s;
 		std::stringstream content;
   		file.open("." + cookie_page);
 		if (!file)
-			exit_error("cookie page couldn't be opened");
+			return send_error(403, ev_list, i, error_loc);
 		content << file.rdbuf();
 		s << "HTTP/1.1 200 OK\r\n";
 		s << "Content-Length: " <<  content.str().size() << "\r\n";
@@ -209,7 +209,7 @@ public:
 		s << "Content-Type: text/html\r\n\r\n";	
 		s << content.str();
 		file.close();
-		send(ev_list[i].ident, s.str().c_str(), s.str().size(), 0);
+		return send(ev_list[i].ident, s.str().c_str(), s.str().size(), 0);
 	}
 
 	void set_error(int status, std::string &content)

@@ -321,7 +321,7 @@ public:
         else if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
             rep.send_redirection(_ev_list, i, _redir_loc);
 		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
-            rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page);
+            rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page, _status_root + _status_route + "/" + _error_page);
         else if (rep._status != 0)
         {
             rep.send_error(request._status, _ev_list, i, _status_root + _status_route + "/" + _error_page);
@@ -379,8 +379,8 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].flags & EV_CLEAR)
-                    handle_timeout(i, request);
+                // else if (this->_ev_list[i].flags & EV_CLEAR)
+                //     handle_timeout(i, request);
                 else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
