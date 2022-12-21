@@ -49,7 +49,7 @@ private:
     int _clients[SOMAXCONN];
 
     // Request values
-    bool _rq;
+    int _rq;
     std::string _full_rq;
     size_t _full_len;
     size_t _max_size;
@@ -126,7 +126,7 @@ public:
 
         // Other data init
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
-        this->_rq = false;
+        this->_rq = 0;
         _full_len = 0;
         _ev_set.resize(1);
 
@@ -265,7 +265,7 @@ public:
     void set_write(int &i)
     {
         _full_rq.clear();
-        _rq = true;
+        _rq = 1;
         _full_len = 0;
         _ev_set.resize(_ev_set.size() + 1);
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
@@ -286,7 +286,10 @@ public:
         _full_rq += std::string(_buf, ret);
         request.string_to_request(_full_rq);
         if (request._length)
+        {
+            _rq = 2;
             _full_len = request._length;
+        }
 
         if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
         {
@@ -341,7 +344,7 @@ public:
                     rep.send_error(405, _ev_list, i, _status_root + _status_route + "/" + _error_page);
             }
         }
-        _rq = false;
+        _rq = 0;
         delete_client(this->_ev_list[i].ident);
         _ev_set.resize(_ev_set.size() + 1);
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
@@ -379,11 +382,11 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                // else if (this->_ev_list[i].flags & EV_CLEAR)
-                //     handle_timeout(i, request);
-                else if (this->_ev_list[i].filter == EVFILT_READ && !_rq)
+                else if (this->_ev_list[i].flags & EV_CLEAR)
+                    handle_timeout(i, request);
+                else if (this->_ev_list[i].filter == EVFILT_READ && (!_rq || _rq == 2))
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
-                else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq)
+                else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq == 1)
                     resp = response_handler(i, request);
             }
         }

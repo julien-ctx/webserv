@@ -13,7 +13,7 @@ SRCS = $(addprefix srcs/, main.cpp utils.cpp config_parser.cpp config_utiles.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 
-CPPFLAGS = -Wall -Wextra -Werror
+CPPFLAGS = -Wall -Wextra -Werror -g -fsanitize=address
 
 all: $(NAME)
 
