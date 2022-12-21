@@ -277,6 +277,7 @@ public:
         Request request( _index, _root, _route, _methods, _error_page, _status_route, _status_root);
         
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
+        _rq = 2;
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, 0);
         if (ret < 0)
@@ -286,10 +287,7 @@ public:
         _full_rq += std::string(_buf, ret);
         request.string_to_request(_full_rq);
         if (request._length)
-        {
-            _rq = 2;
             _full_len = request._length;
-        }
 
         if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
         {
@@ -302,7 +300,7 @@ public:
         // else if (request._length > _max_size)
         // {
         //     // Set 413 error here
-        //     exit_error("request size too big");
+        //     request._status = 413;
         //     set_write(i);
         // }
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
