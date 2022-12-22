@@ -247,8 +247,8 @@ public:
     void accepter()
     {
         int client_fd = accept(this->_fd, (struct sockaddr *)&this->_addr, &this->_socklen);
-        if (client_fd < 0)
-            exit_error("accept function failed");
+        if (client_fd < 0 || !check_client(client_fd))
+            return;
         if (add_client(client_fd) < 0)
         {
             std::cout << RED << "[CLIENT] connexion denied\n" << RESET;
@@ -257,7 +257,7 @@ public:
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), client_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-        EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, 0, TIMEOUT, NULL);
+        EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
     }
 
     void set_write(int &i)
@@ -280,7 +280,7 @@ public:
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, BUFFER_SIZE);
         if (ret < 0)
-            exit_error("recv function failed");
+            return request;
         else
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf, ret);
@@ -387,7 +387,7 @@ public:
                     delete_client(this->_ev_list[i].ident);
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
-                else if (this->_ev_list[i].flags & EV_CLEAR)
+                else if (this->_ev_list[i].filter == EVFILT_TIMER && !check_client(_ev_list[i].ident))
                     handle_timeout(i, request);
                 else if (this->_ev_list[i].filter == EVFILT_READ && (!_rq || _rq == 2))
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
