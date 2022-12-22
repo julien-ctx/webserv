@@ -249,12 +249,12 @@ public:
         int client_fd = accept(this->_fd, (struct sockaddr *)&this->_addr, &this->_socklen);
         if (client_fd < 0 || !check_client(client_fd))
             return;
+        fcntl(client_fd, F_SETFL, O_NONBLOCK);
         if (add_client(client_fd) < 0)
         {
             std::cout << RED << "[CLIENT] connexion denied\n" << RESET;
             return;
         }
-        fcntl(client_fd, F_SETFL, O_NONBLOCK);
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), client_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
         EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
@@ -318,12 +318,15 @@ public:
         DEBUG2("response handler");
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
-        if (*(rep.GetUri().GetPath().end() - 1) == '/')
+        if (rep.GetUri().GetPath().size())
         {
-            rep._uri._path.pop_back();
-            rep.send_redirection(_ev_list, i, rep.GetUri().GetPath()); 
+            if (*(rep.GetUri().GetPath().end() - 1) == '/')
+            {
+                rep._uri._path.pop_back();
+                rep.send_redirection(_ev_list, i, rep.GetUri().GetPath()); 
+            }
         }
-        else if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
+        if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
             rep.send_redirection(_ev_list, i, _redir_loc);
 		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page, _status_root + _status_route + "/" + _error_page);
@@ -351,17 +354,18 @@ public:
         return rep;
     }
 
-    void handle_timeout(int &i, Request &request)
-    {(void)request;
+    Request handle_timeout(int &i, Request &request)
+    {
         DEBUG("Timeout");
         //set_write(i);
         
-        send_error(408, _ev_list, i, _status_root + _status_route + "/" + _error_page);
         //delete_client(this->_ev_list[i].ident);
 
-        _ev_set.resize(_ev_set.size() + 1);
-        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE | EV_DISABLE, 0, 0, NULL); 
-        // request._method = 0;
+        request._method = 0;
+        request._status = 408;
+		set_write(i);
+        _rq = 1;
+        return request;
         // response_handler(i, request);
         //_client(_ev_list[i].ident);
         // request._status = 408;
@@ -388,7 +392,7 @@ public:
                 else if (this->_ev_list[i].ident == static_cast<uintptr_t>(this->_fd))
                     accepter();
                 else if (this->_ev_list[i].filter == EVFILT_TIMER && !check_client(_ev_list[i].ident))
-                    handle_timeout(i, request);
+                    request = handle_timeout(i, request);
                 else if (this->_ev_list[i].filter == EVFILT_READ && (!_rq || _rq == 2))
                     request = request_handler(i, _index, _root, _route, _methods, _error_page, _status_route, _status_root);
                 else if (this->_ev_list[i].filter == EVFILT_WRITE && _rq == 1)
