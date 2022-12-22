@@ -256,8 +256,8 @@ public:
         }
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
         _ev_set.resize(_ev_set.size() + 2);
-        EV_SET(&*(this->_ev_set.end() - 2), client_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-        EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
+        EV_SET(&*(this->_ev_set.end() - 2), client_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+        EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_ONESHOT, 0, TIMEOUT, NULL);
     }
 
     void set_write(int &i)
@@ -266,7 +266,7 @@ public:
         _rq = 1;
         _full_len = 0;
         _ev_set.resize(_ev_set.size() + 1);
-        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
     }
 
     // Receives request and sets the client ready to send the response
@@ -345,9 +345,9 @@ public:
             }
         }
         _rq = 0;
-        delete_client(this->_ev_list[i].ident);
         _ev_set.resize(_ev_set.size() + 1);
-        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE | EV_DISABLE, 0, 0, NULL);
+        delete_client(this->_ev_list[i].ident);
         return rep;
     }
 
@@ -360,7 +360,7 @@ public:
         //delete_client(this->_ev_list[i].ident);
 
         _ev_set.resize(_ev_set.size() + 1);
-        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE, 0, 0, NULL); 
+        EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE | EV_DISABLE, 0, 0, NULL); 
         // request._method = 0;
         // response_handler(i, request);
         //_client(_ev_list[i].ident);
@@ -373,18 +373,14 @@ public:
         Response    resp;
         
         // Registers interest in READ on server's fd and adds the event to kqueue.
-        EV_SET(&_ev_set.back(), this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+        EV_SET(&_ev_set.back(), this->_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
         while (1)
         {
-            kevent(this->_kq, _ev_set.data(), _ev_set.size(), NULL, 0, NULL);
             // Waits for an event to occur and returns number of events caught
-            int event_nb = kevent(this->_kq, NULL, 0, this->_ev_list, SOMAXCONN, NULL);
+            int event_nb = kevent(this->_kq, _ev_set.data(), _ev_set.size(), this->_ev_list, SOMAXCONN, NULL);
             if (!_rq)
-            {
-                _ev_set.resize(1);
-                EV_SET(&_ev_set.back(), this->_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-            }
+                _ev_set.clear();
             for (int i = 0; i < event_nb; i++)
             {
                 if (this->_ev_list[i].flags & EV_EOF)
