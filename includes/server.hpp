@@ -383,8 +383,8 @@ public:
         {
             // Waits for an event to occur and returns number of events caught
             int event_nb = kevent(this->_kq, _ev_set.data(), _ev_set.size(), this->_ev_list, SOMAXCONN, NULL);
-            if (!_rq)
-                _ev_set.clear();
+            _ev_set.shrink_to_fit();
+            _ev_set.clear();
             for (int i = 0; i < event_nb; i++)
             {
                 if (this->_ev_list[i].flags & EV_EOF)
