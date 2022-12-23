@@ -272,6 +272,16 @@ public:
     {
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
+        if (request.GetStatus() >= 400)
+        {
+            rep.send_error(request.GetStatus(), _ev_list, i, _status_root + _status_route + "/" + _error_page);
+            _rq = 0;
+            _ev_set.shrink_to_fit();
+            _ev_set.resize(_ev_set.size() + 1);
+            EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE | EV_DISABLE, 0, 0, NULL);
+            delete_client(this->_ev_list[i].ident);
+            return rep;
+        }  
         if (rep.GetUri().GetPath().size())
         {
             if (*(rep.GetUri().GetPath().end() - 1) == '/')
@@ -292,11 +302,8 @@ public:
             rep.send_redirection(_ev_list, i, _redir_loc);
 		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page, _status_root + _status_route + "/" + _error_page);
-        else if (rep._status != 0)
-        {
+        else if (request.GetStatus() >= 400)
             rep.send_error(request.GetStatus(), _ev_list, i, _status_root + _status_route + "/" + _error_page);
-            rep._status = 0;
-        }
         else
         {
             if (cgi.isCGI(request, _cgi_ext))

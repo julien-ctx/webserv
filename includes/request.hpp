@@ -244,7 +244,6 @@ public:
             _status = 400;
             return;
         }
-        
         start_line = request_string.substr(0, rpos);  // si bug essayer substr(lpos, rpos - lpos) mais lpos = 0 ici
         lpos = rpos + 2; // +1 pour \r +1 pour \n --> +2
         rpos = request_string.find("\r\n\r\n", lpos);   // --> r\n\r\n = debut du body / fin header
@@ -261,13 +260,19 @@ public:
         iss.str(start_line);
         iss >> method >> path >> version;   // >> = ' ' donc : GET /info.html HTTP/1.1 --> GET>>/info.html>>HTTP/1.1
         if (!iss.good() && !iss.eof())
+        {
             _status = 400;
+            return ;
+        }
         SetMethod(string_to_method(method));
         if (path == "/")
             path += _index;
         SetUri(Uri(path));
         if (version.compare(GetVersion()) != 0 && _method == 0)
+        {
             _status = 505;
+            return ;
+        }
         iss.clear();  // parse header fields
         iss.str(header_lines);
         while (std::getline(iss, line)) // --> cet overload de getline = gnl en gros
@@ -331,7 +336,7 @@ public:
         }
         else
             SetBody(message_body);
-        _status = 0;
+        _status = 200;
         return;
     }
 };
