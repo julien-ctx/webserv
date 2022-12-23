@@ -51,8 +51,41 @@ public:
 		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
 	}
 
-	bool execute(uintptr_t &fd, Request &rq)
+	void set_error(int status, std::string &content)
 	{
+		size_t start = 0;
+		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
+			content.replace(start, 10, std::to_string(status));
+	}
+
+	bool sendError(uintptr_t &fd, std::string error_loc)
+	{
+		std::string 		file_name;
+		std::ifstream 		file;
+		std::stringstream 	s;
+		std::stringstream 	file_n;
+		std::stringstream   buffer;
+        std::string         content;
+
+		file_name = "." + error_loc;
+		file.open(file_name);
+		if (!file)
+			std::cout << RED << "Cannot respond with " << 408 << std::endl << RESET;
+		buffer << file.rdbuf();
+		std::string file_content = buffer.str();
+		set_error(413, file_content);
+		s << "HTTP/1.1 413 Request Entity Too Large" << "\r\n"; 
+		s << "Content-Length: " << file_content.size() << "\r\n";
+		s << "Content-Type: text/html\r\n\r\n";
+        content += s.str();
+		content += file_content;
+		file.close();
+		return send(fd, content.c_str(), content.size(), 0);
+	}
+
+	bool execute(uintptr_t &fd, Request &rq, std::string error_loc)
+	{
+		int r;
 		int out[2];
 		int in[2];
 		if (pipe(out) < 0)
@@ -69,7 +102,7 @@ public:
 			close(in[1]);
 			close(out[0]);
 			if (written != (ssize_t)(rq.GetBodyLength() + _cgi_dir.size()))
-				exit_error("Size different CGI");
+				exit(1);
 			dup2(in[0], STDIN_FILENO);
 			close(in[0]);
 			dup2(out[1], STDOUT_FILENO);
@@ -112,7 +145,7 @@ public:
 			if (execve(cmd[0], cmd, getEnv()) < 0)
 				exit_error("Invalid CGI program");
 		}
-		waitpid(0, NULL, 0);
+		waitpid(0, &r, 0);
 		char buf[BUFFER_SIZE];
 		std::memset(buf, 0, BUFFER_SIZE);
 		close(out[1]);
@@ -123,6 +156,7 @@ public:
 			this->_output += std::string(buf, ret);
 		}
 		close(out[0]);
-		return sendOutput(fd);
+		return r == 0 ? sendOutput(fd) : sendError(fd, error_loc);
+
 	}
 };

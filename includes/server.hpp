@@ -128,6 +128,7 @@ public:
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
         this->_rq = 0;
         _full_len = 0;
+        _ev_set.shrink_to_fit();
         _ev_set.resize(1);
 
         // Creates the socket
@@ -176,39 +177,6 @@ public:
         return close(fd);
     }
 
-    void set_error(int status, std::string &content)
-	{
-		size_t start = 0;
-		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
-			content.replace(start, 10, std::to_string(status));
-	}
-
-	bool send_error(int status, struct kevent *ev_list , int i, std::string error_loc)
-	{
-		std::string 		file_name;
-		std::ifstream 		file;
-		std::stringstream 	s;
-		std::stringstream 	file_n;
-		std::stringstream   buffer;
-        std::string         content;
-
-		file_name = "." + error_loc;
-		file.open(file_name);
-		if (!file)
-			std::cout << RED << "Cannot respond with " << status << std::endl << RESET;
-		buffer << file.rdbuf();
-		std::string file_content = buffer.str();
-		set_error(status, file_content);
-		s << "HTTP/1.1" << " " << status << " " << status_to_string(status) << "\r\n"; 
-		s << "Content-Length: " << file_content.size() << "\r\n";
-		s << "Content-Type: text/html\r\n\r\n";
-        content += s.str();
-		content += file_content;
-		file.close();
-		int ret = send(ev_list[i].ident, content.c_str(), content.size(), 0);
-        return ret > 0;
-	}
-
     void binder()
     {
         // Allows kernel to reuse the address. Bind function now works instantaneously
@@ -255,6 +223,7 @@ public:
             std::cout << RED << "[CLIENT] connexion denied\n" << RESET;
             return;
         }
+        _ev_set.shrink_to_fit();
         _ev_set.resize(_ev_set.size() + 2);
         EV_SET(&*(this->_ev_set.end() - 2), client_fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
         EV_SET(&_ev_set.back(), client_fd, EVFILT_TIMER, EV_ADD | EV_ONESHOT, 0, TIMEOUT, NULL);
@@ -265,6 +234,7 @@ public:
         _full_rq.clear();
         _rq = 1;
         _full_len = 0;
+        _ev_set.shrink_to_fit();
         _ev_set.resize(_ev_set.size() + 1);
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
     }
@@ -297,11 +267,11 @@ public:
                 request._status = 501;
             set_write(i);
         }
-        else if (request._length > _max_size)
-        {
-            request._status = 413;
-            set_write(i);
-        }
+        // else if (request._length > _max_size)
+        // {
+        //     request._status = 413;
+        //     set_write(i);
+        // }
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
             set_write(i);
@@ -333,7 +303,7 @@ public:
         else
         {
             if (cgi.isCGI(request, _cgi_ext))
-                cgi.execute(this->_ev_list[i].ident, request);
+                cgi.execute(this->_ev_list[i].ident, request, _status_root + _status_route + "/" + _error_page);
             else
             {
                 if (request._method == GET)
@@ -343,6 +313,7 @@ public:
             }
         }
         _rq = 0;
+        _ev_set.shrink_to_fit();
         _ev_set.resize(_ev_set.size() + 1);
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_DELETE | EV_DISABLE, 0, 0, NULL);
         delete_client(this->_ev_list[i].ident);
