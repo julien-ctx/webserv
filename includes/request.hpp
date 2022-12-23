@@ -149,6 +149,26 @@ else
 
 class Request
 {
+
+private :
+
+    std::map<std::string, std::string>  _headers;
+    std::string                         _version;
+    std::string                         _body;
+
+    int     _status;
+    int     _method;
+    Uri     _uri;
+    size_t  _length;
+
+    std::string         _index;
+    std::string         _root;
+    std::string         _route;
+    std::vector<int>    _methods;
+    std::string         _error_page;
+    std::string         _status_route;
+    std::string         _status_root;
+
 public:
 
     Request() : _version("HTTP/1.1")  {}//: _method(0) {}  // vide par default? --> a voir | 0 pour GET
@@ -161,6 +181,9 @@ public:
 
     void SetUri(const Uri& uri)
     { _uri = uri; }
+
+    void SetStatus(int s)
+    { _status = s; }
 
     void SetBody(const std::string& body)
     {
@@ -183,6 +206,9 @@ public:
     int GetMethod() const
     { return _method; }
 
+    int GetStatus() const
+    { return _status; }
+
     Uri GetUri() const
     { return _uri; }
 
@@ -191,6 +217,9 @@ public:
 
     std::string GetBody() const
     { return _body; }
+
+    size_t GetLength() const
+    { return _length; }
 
     std::map<std::string, std::string> GetHeaders() const
     { return _headers; }
@@ -305,21 +334,4 @@ public:
         _status = 0;
         return;
     }
-
-    std::map<std::string, std::string>  _headers;
-    std::string                         _version;
-    std::string                         _body;
-
-    int _status;
-    int _method;
-    Uri _uri;
-    size_t _length;
-
-    std::string _index;
-    std::string _root;
-    std::string _route;
-    std::vector<int> _methods;
-    std::string _error_page;
-    std::string _status_route;
-    std::string _status_root;
 };

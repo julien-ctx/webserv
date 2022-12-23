@@ -58,7 +58,7 @@ public:
 	/* ----- Constructors ----- */
     Server() {}
 
-    Server(TOML::parse *pars, size_t &i) : _config(pars)
+        Server(TOML::parse *pars, size_t &i) : _config(pars)
     {
         // Data config setup
         std::string parent = "server." + std::to_string(i);
@@ -249,30 +249,19 @@ public:
 
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, BUFFER_SIZE);
         if (ret < 0)
+        {
+            request.SetStatus(500);
             return request;
+        }
         else
             this->_buf[ret] = 0;
-        _full_rq += std::string(_buf, ret);
 
+        _full_rq += std::string(_buf, ret);
         request.string_to_request(_full_rq);
 
-        if (request._length)
-            _full_len = request._length;
-
-        if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
-        {
-            if (request.GetMethod() == GET || request.GetMethod() == POST || request.GetMethod() == DELETE)
-                request._status = 405;
-            else
-                request._status = 501;
-            set_write(i);
-        }
-        // else if (request._length > _max_size)
-        // {
-        //     request._status = 413;
-        //     set_write(i);
-        // }
-        else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
+        if (request.GetLength())
+            _full_len = request.GetLength();
+        if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
             set_write(i);
         return request;
@@ -287,7 +276,15 @@ public:
         {
             if (*(rep.GetUri().GetPath().end() - 1) == '/')
             {
-                rep._uri._path.pop_back();
+                std::string path(rep.GetUri().GetPath());
+                for (int i = path.size() - 1; i != -1; i--)
+                {
+                    if (path[i] == '/' && i != 0)
+                        path.pop_back();
+                    else
+                        break;
+                }
+                rep._uri._path = path;
                 rep.send_redirection(_ev_list, i, rep.GetUri().GetPath()); 
             }
         }
@@ -297,7 +294,7 @@ public:
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page, _status_root + _status_route + "/" + _error_page);
         else if (rep._status != 0)
         {
-            rep.send_error(request._status, _ev_list, i, _status_root + _status_route + "/" + _error_page);
+            rep.send_error(request.GetStatus(), _ev_list, i, _status_root + _status_route + "/" + _error_page);
             rep._status = 0;
         }
         else
@@ -306,9 +303,9 @@ public:
                 cgi.execute(this->_ev_list[i].ident, request, _status_root + _status_route + "/" + _error_page);
             else
             {
-                if (request._method == GET)
+                if (request.GetMethod() == GET)
                     rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, _root + _route, _autoindex);
-                else if (request._method == DELETE)
+                else if (request.GetMethod() == DELETE)
                     rep.methodDELETE(_ev_list, i, _root + _route + _cgi_dir);
             }
         }
@@ -322,8 +319,8 @@ public:
 
     Request handle_timeout(int &i, Request &request)
     {
-        request._method = 0;
-        request._status = 408;
+        request.SetMethod(0);
+        request.SetStatus(408);
 		set_write(i);
         _rq = 1;
         return request;

@@ -49,7 +49,7 @@ public:
 public:
 	/* ----- Constructors ----- */
 	Response() {}
-	Response(const Request& req) : _method(req._method), _version(req._version), _uri(req._uri), _headers(req._headers), _status(req._status), _length(req._length) {}
+	Response(const Request& req) : _method(req.GetMethod()), _version(req.GetVersion()), _uri(req.GetUri()), _headers(req.GetHeaders()), _status(req.GetStatus()), _length(req.GetLength()) {}
 
 	~Response() {}
     /* ------------------------ */
