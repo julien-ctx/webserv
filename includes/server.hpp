@@ -212,8 +212,8 @@ public:
     void binder()
     {
         // Allows kernel to reuse the address. Bind function now works instantaneously
-        int yes = 1;
-        if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
+        int optval = 1;
+        if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0)
         {
             close(this->_fd);
             exit_error("setsockopt function failed");
@@ -272,7 +272,6 @@ public:
     // Receives request and sets the client ready to send the response
     Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _status_route, std::string _status_root)
     {
-        DEBUG("request handler");
         Request request( _index, _root, _route, _methods, _error_page, _status_route, _status_root);
         
         std::memset(this->_buf, 0, BUFFER_SIZE * sizeof(char));
@@ -284,7 +283,9 @@ public:
         else
             this->_buf[ret] = 0;
         _full_rq += std::string(_buf, ret);
+
         request.string_to_request(_full_rq);
+
         if (request._length)
             _full_len = request._length;
 
@@ -296,26 +297,20 @@ public:
                 request._status = 501;
             set_write(i);
         }
-        // else if (request._length > _max_size)
-        // {
-        //     // Set 413 error here
-        //     request._status = 413;
-        //     set_write(i);
-        // }
-        else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
-                || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
+        else if (request._length > _max_size)
         {
-            // DEBUG(_full_rq);
-            DEBUG2("Request full");
+            request._status = 413;
             set_write(i);
         }
+        else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
+                || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
+            set_write(i);
         return request;
     }
 
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request request)
     {
-        DEBUG2("response handler");
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
         Response rep(request);
         if (rep.GetUri().GetPath().size())
@@ -356,19 +351,11 @@ public:
 
     Request handle_timeout(int &i, Request &request)
     {
-        DEBUG("Timeout");
-        //set_write(i);
-        
-        //delete_client(this->_ev_list[i].ident);
-
         request._method = 0;
         request._status = 408;
 		set_write(i);
         _rq = 1;
         return request;
-        // response_handler(i, request);
-        //_client(_ev_list[i].ident);
-        // request._status = 408;
     }
 
     void launch()
