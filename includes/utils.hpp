@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <sys/event.h>
 #include <unistd.h>
@@ -11,15 +12,24 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <dirent.h>
 #include <sys/socket.h>
+#include <cstdio>
 #include <sys/un.h>
 #include <netdb.h>
 #include <fcntl.h>
 #include <vector>
 #include <map>
 
-#define BUFFER_SIZE 50000
-#define MAX_MSG_SIZE 1024
+# include "../includes/toml/parse.hpp"
+# include "../includes/config_parser.hpp"
+
+#define BUFFER_SIZE 30000
+#define TIMEOUT 3000
+#define MAX_SERVERS 5
+
+#define DEBUG(x) std::cout << CYAN << x << std::endl << RESET;
+#define DEBUG2(x) std::cout << MAGENTA << x << std::endl << RESET;
 
 #define RESET   "\033[0m"
 #define BLACK   "\033[1m\033[30m"      /* Bold Black */
@@ -33,6 +43,8 @@
 
 void exit_error (std::string str);
 
+extern char **environ;
+
 enum HttpMethod {
     GET,    // 0
     POST,   // 1
@@ -44,4 +56,3 @@ enum HttpStatusCode {
     BadRequest = 400,
     InternalServerError = 500,
 };
-

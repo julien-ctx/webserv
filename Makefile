@@ -9,11 +9,11 @@ NAME = webserv
 
 PROJECT = WEBSERV
 
-SRCS = $(addprefix srcs/, main.cpp utils.cpp) \
+SRCS = $(addprefix srcs/, main.cpp utils.cpp config_parser.cpp config_utiles.cpp parse.cpp) \
 
 OBJS = $(SRCS:.cpp=.o)
 
-CPPFLAGS = -Wall -Wextra -Werror -fsanitize=address
+CPPFLAGS = -Wall -Wextra -Werror -g -fsanitize=address -std=c++98
 
 all: $(NAME)
 
@@ -31,6 +31,7 @@ clean:
 
 fclean: clean
 	@rm -rf $(NAME)
+	@rm -rf webserv.dSYM
 	@printf $(RED)"\r\033[K➜ ["$(PROJECT)"] "$(WHITE)"fclean"$(RED)" has been done\n"$(RESET)
 
 re: fclean all

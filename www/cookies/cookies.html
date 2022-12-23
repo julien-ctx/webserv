@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" >
+
+<head>
+	<meta charset="UTF-8">
+	<title>Webserv | Cookies</title>
+	<link rel="stylesheet" type="text/css" href="../style.css"/>
+	<link rel="icon" href="../images/favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+	<h1><a href="/">Webserv</a></h1>
+	<p>By clicking on this page, you allowed the server to set cookies for your session.</p>
+	<div class="container">
+		<button onclick="printCookies()" class="cookie-button">Print Cookies</button><br>
+		<button onclick="clearCookies()" class="cookie-button">Clear Cookies</button><br>
+		<div id="cookies"></div>
+	</div>
+	<script>
+		function printCookies()
+		{
+			let cookies = document.cookie;
+			document.getElementById("cookies").innerHTML = cookies;
+		}
+		function clearCookies()
+		{
+			let cookies = document.cookie.split(";");
+			for (let i = 0; i < cookies.length; i++)
+			{
+				let cookie = cookies[i];
+				let equal = cookie.indexOf("=");
+				let key = equal > -1 ? cookie.substr(0, equal) : cookie;
+				document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    		}
+			document.getElementById("cookies").innerHTML = "";
+		}
+	</script>
+	<footer>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<h2><a href="https://github.com/ktroude" target="_blank">ktroude</a>
+			| <a href="https://github.com/YeetusTitus" target="_blank">jforner</a>
+			| <a href="https://github.com/julien-ctx" target="_blank">jcauchet</a>
+		</h2>
+	</footer>
+</body>
+
+</html>

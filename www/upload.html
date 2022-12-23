@@ -3,30 +3,18 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>Webserv | Home</title>
+	<title>Webserv | Upload</title>
 	<link rel="stylesheet" type="text/css" href="./style.css"/>
+	<link rel="icon" href="images/favicon.ico" type="image/x-icon" />
 </head>
 
 <body>
-	<h1>Webserv</h1>
-	<nav>
-		<ul>
-		  <li>
-			<a href="#">GET</a>
-		  </li>
-		  <li>
-			<a href="#">POST</a>
-		  </li>
-		  <li>
-			<a href="#">DELETE</a>
-		  </li>
-		</ul>
-	  </nav>
-	<div class="center">
-		<a href="/">
-			<button>Home</button>
-		</a>
-	</div>
+	<h1><a href="/">Webserv</a></h1>
+	<form method="post" action="./cgi/upload.py" enctype="multipart/form-data">
+		<input type="file" id="actual-btn" name="file" hidden required/>
+		<label for="actual-btn">Choose File<br></label>
+		<input type="submit" class="submit-button" name="submit" value="Submit">
+	</form>
 	<footer>
 		<div class="wave"></div>
 		<div class="wave"></div>

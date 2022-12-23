@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>Webserv | Home</title>
+	<title>Webserv | Errors Index</title>
 	<link rel="stylesheet" type="text/css" href="./style.css"/>
 	<link rel="icon" href="images/favicon.ico" type="image/x-icon" />
 </head>
@@ -12,25 +12,34 @@
 	<h1><a href="/">Webserv</a></h1>
 	<nav>
 		<ul>
-		  <li>
-			<a href="./upload.html">Upload</a>
-		  </li>
-		  <li>
-			<a href="./delete.html">Delete</a>
-		  </li>
-		  <li>
-			<a href="./autoindex">Autoindex</a>
-		  </li>
-		  <li>
-			<a href="./status.html">Status</a>
-		  </li>
-		  <li>
-			<a href="./bonus.html">Bonus</a>
-		  </li>
+			<li>
+				<a href="./status/redirect.html">Redirection 301</a>
+			</li>
+		 	<li>
+				<a href="./fakepage.html">Error 404</a>
+		  	</li>
+			<li>
+				<a href="#" onclick="PUTRequest()">Error 501</a>
+		  	</li>
 		</ul>
-	  </nav>
-	  <br />
-	  <br />
+	</nav>
+	<div id="response"></div>
+	<script>
+		function PUTRequest() {
+    		fetch("unexistingpage.html", {
+     			method: 'PUT'
+    		})
+		.then(response => response.text())
+		.then(html => {
+			document.open();
+			document.write(html);
+			document.close();
+		})
+		.catch(error => console.error(error))
+  		}
+	</script>
+	 <br />
+	 <br />
 	<div class="center">
 		<a href="/">
 			<button class="home-button">Home</button>

@@ -1,0 +1,26 @@
+[[server]]
+    port = 4206
+    address = "127.0.0.1"
+    server_name = ["localhost"]
+    body_size = 1048576
+
+    [[server.location]]
+        route = "/"
+        root = "/www"
+        index = "index.html"
+        allowed_methods = ["POST", "GET", "DELETE"]
+        cgi_extension = ["py", "sh", "pl"]
+        uploadable = true
+        cgi_dir = "/cgi/uploads"
+        autoindex = true
+
+    [[server.location]]
+        route = "/status"
+        root = "/www"
+        error_page = "error.html"
+        redirect = "redirect.html"
+    
+    [[server.location]]
+        route = "/cookies"
+        root = "/www"
+        cookie_page = "cookies.html"

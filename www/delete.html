@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" >
+
+<head>
+	<meta charset="UTF-8">
+	<title>Webserv | Delete</title>
+	<link rel="stylesheet" type="text/css" href="./style.css"/>
+	<link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+	<h1><a href="/">Webserv</a></h1>
+  	<p>Enter the name of the file you want to remove.<br />This file must be inside the upload directory specified in the config file.</p>
+	<form id="deleteForm">
+		<input type="text" id="filename" name="filename">
+		<button type="submit" class="submit-button" id="delete-button">Delete</button>
+	</form>
+	<div id="response"></div>
+
+	<script>
+	const deleteForm = document.getElementById('deleteForm')
+	deleteForm.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const filename = document.getElementById('filename').value;
+		if (filename.trim() === '')
+			return;
+		fetch (`${filename}`, {
+			method: 'DELETE'
+		})
+		.then(response => response.text())
+		.then(html => {
+			document.getElementById('response').innerHTML = html;
+			location.replace();
+		})
+		.catch(error => console.error(error))
+	})
+	</script>
+
+	<footer>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<div class="wave"></div>
+		<h2><a href="https://github.com/ktroude" target="_blank">ktroude</a>
+			| <a href="https://github.com/YeetusTitus" target="_blank">jforner</a>
+			| <a href="https://github.com/julien-ctx" target="_blank">jcauchet</a>
+		</h2>
+	</footer>
+</body>
+
+</html>
