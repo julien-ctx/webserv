@@ -287,7 +287,15 @@ public:
         {
             if (*(rep.GetUri().GetPath().end() - 1) == '/')
             {
-                rep._uri._path.pop_back();
+                std::string path(rep.GetUri().GetPath());
+                for (int i = path.size() - 1; i != -1; i--)
+                {
+                    if (path[i] == '/' && i != 0)
+                        path.pop_back();
+                    else
+                        break;
+                }
+                rep._uri._path = path;
                 rep.send_redirection(_ev_list, i, rep.GetUri().GetPath()); 
             }
         }
