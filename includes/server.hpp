@@ -261,7 +261,21 @@ public:
 
         if (request.GetLength())
             _full_len = request.GetLength();
-        if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
+
+        if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
+        {
+            if (request.GetMethod() == GET || request.GetMethod() == POST || request.GetMethod() == DELETE)
+                request.SetStatus(405);
+            else
+                request.SetStatus(501);
+            set_write(i);
+        }
+        else if (request.GetLength() > _max_size)
+        {
+            request.SetStatus(413);
+            set_write(i);
+        }
+        else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
             set_write(i);
         return request;
@@ -289,7 +303,7 @@ public:
                 std::string path(rep.GetUri().GetPath());
                 for (int i = path.size() - 1; i != -1; i--)
                 {
-                    if (path[i] == '/' && i != 0)
+                    if (path[i] == '/' && i)
                         path.pop_back();
                     else
                         break;
