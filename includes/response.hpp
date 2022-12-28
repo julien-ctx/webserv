@@ -210,21 +210,26 @@ public:
 		std::string 		file_name;
 		std::ifstream 		file;
 		std::stringstream 	s;
-		std::stringstream 	file_n;
 		std::stringstream buffer;
+		std::string file_content;
 
 		file_name = "." + error_loc;
 		file.open(file_name);
 		if (!file)
-			std::cout << RED << "Cannot respond with " << status << std::endl << RESET;
-		buffer << file.rdbuf();
-		std::string file_content = buffer.str();
-		set_error(status, file_content);
+		{
+			std::cout << RED << "Cannot respond correctly with " << status << std::endl << RESET;
+			file_content = "<h1>Error " + std::to_string(status) + "</h1>";
+		}
+		else
+		{
+			buffer << file.rdbuf();
+			file_content = buffer.str();
+			set_error(status, file_content);
+		}
 		s << _version << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
-		s.clear();
 		_content += file_content;
 		file.close();
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);

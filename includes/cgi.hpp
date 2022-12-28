@@ -15,7 +15,7 @@ public:
 	CGI(std::string file, std::string cgi_dir) : _output(""), _path("." + file), _cgi_dir("." + cgi_dir) {}
 	~CGI() {}
 
-	char **getEnv()
+	char **get_env()
 	{
 		char **cmd = new char*[this->_env.size() + 1];
 		int i;
@@ -25,14 +25,14 @@ public:
 		return cmd;
 	}
 
-	bool isCGI(Request &request, std::vector<std::string> &ext)
+	bool is_cgi(Request &request, std::vector<std::string> &ext)
 	{
 		std::string path = request.GetUri().GetPath();
 
 		if (std::find(ext.begin(), ext.end(), path.substr(path.find_last_of(".") + 1)) != ext.end())
 		{
 			std::ifstream file(this->_path);
-			if (file.fail())
+			if (!file)
 				return false;
 			this->_type = path.substr(path.find_last_of(".") + 1);
 			return true;
@@ -40,7 +40,7 @@ public:
 		return false;
 	}
 
-	bool sendOutput(uintptr_t &fd)
+	bool send_output(uintptr_t &fd)
 	{
 		std::string header;
 		if (_path.find("upload.py") != string::npos)
@@ -58,26 +58,32 @@ public:
 			content.replace(start, 10, std::to_string(status));
 	}
 
-	bool sendError(uintptr_t &fd, std::string error_loc)
+	bool send_error(uintptr_t &fd, std::string error_loc)
 	{
 		std::string 		file_name;
 		std::ifstream 		file;
 		std::stringstream 	s;
-		std::stringstream 	file_n;
-		std::stringstream   buffer;
-        std::string         content;
+		std::stringstream buffer;
+		std::string file_content;
+		std::string content;
 
 		file_name = "." + error_loc;
 		file.open(file_name);
 		if (!file)
-			std::cout << RED << "Cannot respond with " << 408 << std::endl << RESET;
-		buffer << file.rdbuf();
-		std::string file_content = buffer.str();
-		set_error(413, file_content);
+		{
+			std::cout << RED << "Cannot respond correctly with " << 413 << std::endl << RESET;
+			file_content = "<h1>Error " + std::to_string(413) + "</h1>";
+		}
+		else
+		{
+			buffer << file.rdbuf();
+			file_content = buffer.str();
+			set_error(413, file_content);
+		}
 		s << "HTTP/1.1 413 Request Entity Too Large" << "\r\n"; 
-		s << "Content-Length: " << file_content.size() << "\r\n";
+		s << "Content-Length: " <<  file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
-        content += s.str();
+		content = s.str();
 		content += file_content;
 		file.close();
 		return send(fd, content.c_str(), content.size(), 0);
@@ -142,7 +148,7 @@ public:
 					break;
 			}
 
-			if (execve(cmd[0], cmd, getEnv()) < 0)
+			if (execve(cmd[0], cmd, get_env()) < 0)
 				exit_error("Invalid CGI program");
 		}
 		waitpid(0, &r, 0);
@@ -156,7 +162,7 @@ public:
 			this->_output += std::string(buf, ret);
 		}
 		close(out[0]);
-		return r == 0 ? sendOutput(fd) : sendError(fd, error_loc);
+		return r == 0 ? send_output(fd) : send_error(fd, error_loc);
 
 	}
 };

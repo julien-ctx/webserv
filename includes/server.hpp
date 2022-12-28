@@ -100,7 +100,7 @@ public:
                 if (_config->at_key_parent("autoindex", parent + ".location." + std::to_string(index)))
                     _autoindex = _config->at_key_parent("autoindex", parent + ".location." + std::to_string(index))->_bool;
             }
-            else if (_config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string.size())
+            if (_config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string.size())
             {
                 if (_error_page.size())
                     exit_error("several error pages");
@@ -112,7 +112,7 @@ public:
                 if ( _config->at_key_parent("redirect", parent + ".location." + std::to_string(index)))
                     _redirect = _config->at_key_parent("redirect", parent + ".location." + std::to_string(index))->_string;
             }
-            else if (_config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string.size())
+            if (_config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string.size())
             {
                 if (_cookie_page.size())
                     exit_error("several cookies pages");
@@ -123,6 +123,13 @@ public:
                 if (_cookie_root == "/") _cookie_root.clear();
             }
         }
+        // Check config errors
+        if (!_index.size())
+            exit_error("no index specified");
+        if (!_error_page.size())
+            exit_error("no error page specified");
+        if (!_cookie_page.size())
+            exit_error("no cookie page specified");
 
         // Other data init
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
@@ -270,11 +277,11 @@ public:
                 request.SetStatus(501);
             set_write(i);
         }
-        else if (request.GetLength() > _max_size)
-        {
-            request.SetStatus(413);
-            set_write(i);
-        }
+        // else if (request.GetLength() > _max_size)
+        // {
+        //     request.SetStatus(413);
+        //     set_write(i);
+        // }
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
             set_write(i);
@@ -320,7 +327,7 @@ public:
             rep.send_error(request.GetStatus(), _ev_list, i, _status_root + _status_route + "/" + _error_page);
         else
         {
-            if (cgi.isCGI(request, _cgi_ext))
+            if (cgi.is_cgi(request, _cgi_ext))
                 cgi.execute(this->_ev_list[i].ident, request, _status_root + _status_route + "/" + _error_page);
             else
             {
