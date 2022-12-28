@@ -36,7 +36,7 @@ private:
     std::string _cookie_root;
     std::string _cookie_route;
     std::string _cookie_page;
-    std::string _redirect;
+    std::vector<std::string> _redirect;
     std::string _redir_loc;
     bool _autoindex;
 
@@ -109,8 +109,6 @@ public:
                 if (_status_route == "/") _status_route.clear();
                 _status_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
                 if (_status_root == "/") _status_root.clear();
-                if ( _config->at_key_parent("redirect", parent + ".location." + std::to_string(index)))
-                    _redirect = _config->at_key_parent("redirect", parent + ".location." + std::to_string(index))->_string;
             }
             if (_config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string.size())
             {
@@ -121,6 +119,13 @@ public:
                 if (_cookie_route == "/") _cookie_route.clear();
                 _cookie_root =  _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
                 if (_cookie_root == "/") _cookie_root.clear();
+            }
+            if (_config->at_key_parent("redirect", parent + ".location." + std::to_string(index)))
+            {
+                std::string route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                if (route == "/") route.clear();
+                std::string red = _config->at_key_parent("redirect", parent + ".location." + std::to_string(index))->_string;
+                _redirect.push_back(route + "/" +red);
             }
         }
         // Check config errors
@@ -317,8 +322,9 @@ public:
                 rep.send_redirection(_ev_list, i, rep.GetUri().GetPath()); 
             }
         }
-        if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
-            rep.send_redirection(_ev_list, i, _redir_loc);
+        for (size_t red = 0; red < _redirect.size(); red++)
+            if (rep.GetUri().GetPath() == _redirect[red])
+                rep.send_redirection(_ev_list, i, _redir_loc);
 		else if ((rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page) && _cookie_page.size())
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page, _status_root + _status_route + "/" + _error_page);
         else if (request.GetStatus() >= 400)
