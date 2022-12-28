@@ -30,7 +30,7 @@
 				let cookie = cookies[i];
 				let equal = cookie.indexOf("=");
 				let key = equal > -1 ? cookie.substr(0, equal) : cookie;
-				document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+				document.cookie = key + "=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT";
     		}
 			document.getElementById("cookies").innerHTML = "";
 		}

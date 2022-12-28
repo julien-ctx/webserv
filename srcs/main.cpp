@@ -79,7 +79,7 @@ void *serv_thread(void *server)
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "Server error : " << e.what() << '\n';
+		std::cerr << RED << "Server error : " << e.what() << RESET << std::endl;
 	}
 		return NULL;
 }
@@ -95,9 +95,9 @@ int main(int ac, char **av)
 			pars = config_parsing(av[1]);
 
 	}
-	catch (const std::exception & e)
+	catch (const std::exception &e)
 	{
-        std::cerr << "Config error : " << e.what() << std::endl;
+        std::cerr << RED << "Config error : " << e.what() << RESET << std::endl;
 		return (1);
     }
 
@@ -120,7 +120,7 @@ int main(int ac, char **av)
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "Server error : " << e.what() << '\n';
+		std::cerr << RED << "Server error : " << e.what() << RESET << std::endl;
 		return 1;
 	}
 	return 0;
