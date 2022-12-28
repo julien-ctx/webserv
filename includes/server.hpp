@@ -128,8 +128,6 @@ public:
             exit_error("no index specified");
         if (!_error_page.size())
             exit_error("no error page specified");
-        if (!_cookie_page.size())
-            exit_error("no cookie page specified");
 
         // Other data init
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
@@ -277,11 +275,11 @@ public:
                 request.SetStatus(501);
             set_write(i);
         }
-        // else if (request.GetLength() > _max_size)
-        // {
-        //     request.SetStatus(413);
-        //     set_write(i);
-        // }
+        else if (request.GetLength() > _max_size)
+        {
+            request.SetStatus(413);
+            set_write(i);
+        }
         else if (((request.GetBodyLength() == _full_len) && request.GetMethod() == POST)
                 || (request.GetMethod() == GET) || (request.GetMethod() == DELETE))
             set_write(i);
@@ -321,7 +319,7 @@ public:
         }
         if (rep.GetUri().GetPath() == _status_route + "/" + _redirect)
             rep.send_redirection(_ev_list, i, _redir_loc);
-		else if (rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page)
+		else if ((rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page) && _cookie_page.size())
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page, _status_root + _status_route + "/" + _error_page);
         else if (request.GetStatus() >= 400)
             rep.send_error(request.GetStatus(), _ev_list, i, _status_root + _status_route + "/" + _error_page);
