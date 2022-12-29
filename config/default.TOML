@@ -11,7 +11,7 @@
         allowed_methods = ["POST", "GET", "DELETE"]
         cgi_extension = ["py", "sh", "pl"]
         uploadable = true
-        cgi_dir = "/cgi/uploads"
+        cgi_dir = "/cgi"
         autoindex = true
 
     [[server.location]]

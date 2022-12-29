@@ -9,10 +9,10 @@ private:
 	std::string _output;
 	std::string _path;
 	std::string _type;
-	std::string _cgi_dir;
+	std::string _cgi_upload_dir;
 	std::vector<std::string> _env;
 public:
-	CGI(std::string file, std::string cgi_dir) : _output(""), _path("." + file), _cgi_dir("." + cgi_dir) {}
+	CGI(std::string file, std::string cgi_dir) : _output(""), _path("." + file), _cgi_upload_dir("." + cgi_dir) {}
 	~CGI() {}
 
 	char **get_env()
@@ -104,10 +104,10 @@ public:
 			if (pipe(in) < 0)
 				exit_error("pipe function failed");
 			fcntl(in[1], F_SETFL, O_NONBLOCK);
-			ssize_t written = write(in[1], (rq.GetBody() + _cgi_dir).c_str(), rq.GetBodyLength() + _cgi_dir.size());
+			ssize_t written = write(in[1], (rq.GetBody() + _cgi_upload_dir).c_str(), rq.GetBodyLength() + _cgi_upload_dir.size());
 			close(in[1]);
 			close(out[0]);
-			if (written != (ssize_t)(rq.GetBodyLength() + _cgi_dir.size()))
+			if (written != (ssize_t)(rq.GetBodyLength() + _cgi_upload_dir.size()))
 				exit(1);
 			dup2(in[0], STDIN_FILENO);
 			close(in[0]);

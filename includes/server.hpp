@@ -24,7 +24,7 @@ private:
     std::string _parent;
     std::vector<std::string> _cgi_ext;
     std::string _cgi_dir;
-    std::string upload_dir;
+    std::string _cgi_upload_dir;
     int _loc_nb;
     bool _uploadable;
     std::string _index;
@@ -79,6 +79,7 @@ public:
                 _index = ptr->_string;
                 _uploadable = _config->at_key_parent("uploadable", _parent + ".location." + std::to_string(index))->_bool;
                 _cgi_dir = _config->at_key_parent("cgi_dir", _parent + ".location." + std::to_string(index))->_string;
+                _cgi_upload_dir = _cgi_dir + "/uploads";
                 _route = _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (_route == "/") _route.clear();
                 _root = _config->at_key_parent("root", _parent + ".location." + std::to_string(index))->_string;
@@ -260,6 +261,46 @@ public:
         return _autoindex;
     }
 
+    bool wrong_method(std::string path, int req_method)
+    {
+        std::string method;
+        switch (req_method)
+        {
+            case GET:
+                method = "GET";
+                break;
+            case POST:
+                method = "POST";
+                break;
+            case DELETE:
+                method = "DELETE";
+                break;
+        }
+        for (int index = 0; index < _loc_nb; index++)
+        {
+            std::string route =  _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
+            if (route == "/") route = "";
+            std::string file_name;
+
+            size_t pos = path.find_last_of('/');
+            if (pos == std::string::npos)
+                file_name = path;
+            else
+                file_name = path.substr(pos + 1);
+            if (route + "/" + file_name == path || _cgi_dir + "/" + file_name == path)
+            {
+                if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index)))
+                {
+                    int size = _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array.size();
+                    for (int i = 0; i < size; i++)
+                        if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[i]._string == method)
+                            return false;
+                }
+            }
+        }
+        return true;
+    }
+
     // Receives request and sets the client ready to send the response
     Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _status_route, std::string _status_root)
     {
@@ -283,7 +324,7 @@ public:
         if (request.GetLength())
             _full_len = request.GetLength();
 
-        if (std::find(_methods.begin(), _methods.end(), request.GetMethod()) == _methods.end())
+        if (wrong_method(request.GetUri().GetPath(), request.GetMethod()))
         {
             if (request.GetMethod() == GET || request.GetMethod() == POST || request.GetMethod() == DELETE)
                 request.SetStatus(405);
@@ -305,7 +346,7 @@ public:
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request request)
     {
-        CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_dir);
+        CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_upload_dir);
         Response rep(request);
         if (request.GetStatus() >= 400)
         {
@@ -350,7 +391,7 @@ public:
                 if (request.GetMethod() == GET)
                     rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, path, check_autoindex(rep.GetUri().GetPath()));
                 else if (request.GetMethod() == DELETE)
-                    rep.methodDELETE(_ev_list, i, path + _cgi_dir);
+                    rep.methodDELETE(_ev_list, i, path + _cgi_upload_dir);
             }
         }
         _rq = 0;
