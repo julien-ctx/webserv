@@ -21,6 +21,7 @@ private:
     int _port;
     std::string _addr_name;
     TOML::parse *_config;
+    std::string _parent;
     std::vector<std::string> _cgi_ext;
     std::string _cgi_dir;
     std::string upload_dir;
@@ -58,73 +59,73 @@ public:
 	/* ----- Constructors ----- */
     Server() {}
 
-        Server(TOML::parse *pars, size_t &i) : _config(pars)
+    Server(TOML::parse *pars, size_t i) : _config(pars)
     {
         // Data config setup
-        std::string parent = "server." + std::to_string(i);
-        _port = _config->at_key_parent("port", parent)->_int;
-		_addr_name = _config->at_key_parent("address", parent)->_string;
-        _loc_nb = _config->at_key_parent("location", parent)->_array.size();
+        _parent = "server." + std::to_string(i);
+        _port = _config->at_key_parent("port", _parent)->_int;
+		_addr_name = _config->at_key_parent("address", _parent)->_string;
+        _loc_nb = _config->at_key_parent("location", _parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
         _redir_loc = "https://www.google.com/";
 
         for (int index = 0; index < _loc_nb; index++)
         {
-            TOML::parse::pointer ptr = _config->at_key_parent("index", parent + ".location." + std::to_string(index));
+            TOML::parse::pointer ptr = _config->at_key_parent("index", _parent + ".location." + std::to_string(index));
             if (ptr->_string.size())
             {
                 if (_index.size())
                     exit_error("several indexes in config file");
                 _index = ptr->_string;
-                _uploadable = _config->at_key_parent("uploadable", parent + ".location." + std::to_string(index))->_bool;
-                _cgi_dir = _config->at_key_parent("cgi_dir", parent + ".location." + std::to_string(index))->_string;
-                _route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                _uploadable = _config->at_key_parent("uploadable", _parent + ".location." + std::to_string(index))->_bool;
+                _cgi_dir = _config->at_key_parent("cgi_dir", _parent + ".location." + std::to_string(index))->_string;
+                _route = _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (_route == "/") _route.clear();
-                _root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                _root = _config->at_key_parent("root", _parent + ".location." + std::to_string(index))->_string;
                 if (_root == "/") _root.clear();
-                size_t size = _config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array.size();
+                size_t size = _config->at_key_parent("cgi_extension", _parent + ".location." + std::to_string(index))->_array.size();
                 for (size_t j = 0; j < size; j++)
-                    _cgi_ext.push_back(_config->at_key_parent("cgi_extension", parent + ".location." + std::to_string(index))->_array[j]._string);
-                size =  _config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array.size();
+                    _cgi_ext.push_back(_config->at_key_parent("cgi_extension", _parent + ".location." + std::to_string(index))->_array[j]._string);
+                size =  _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array.size();
                 for (size_t j = 0; j < size; j++)
                 {
-                    if (_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string == "GET")
+                    if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[j]._string == "GET")
                         _methods.push_back(GET);
-                    else if (_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string == "POST")
+                    else if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[j]._string == "POST")
                         _methods.push_back(POST);
-                    else if (_config->at_key_parent("allowed_methods", parent + ".location." + std::to_string(index))->_array[j]._string == "DELETE")
+                    else if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[j]._string == "DELETE")
                         _methods.push_back(DELETE);
                     else
                         exit_error("some allowed methods are not handled by the server");
                 }
-                if (_config->at_key_parent("autoindex", parent + ".location." + std::to_string(index)))
-                    _autoindex = _config->at_key_parent("autoindex", parent + ".location." + std::to_string(index))->_bool;
+                if (_config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index)))
+                    _autoindex = _config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index))->_bool;
             }
-            if (_config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string.size())
+            if (_config->at_key_parent("error_page", _parent + ".location." + std::to_string(index))->_string.size())
             {
                 if (_error_page.size())
                     exit_error("several error pages");
-                _error_page = _config->at_key_parent("error_page", parent + ".location." + std::to_string(index))->_string;
-                _status_route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                _error_page = _config->at_key_parent("error_page", _parent + ".location." + std::to_string(index))->_string;
+                _status_route = _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (_status_route == "/") _status_route.clear();
-                _status_root = _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                _status_root = _config->at_key_parent("root", _parent + ".location." + std::to_string(index))->_string;
                 if (_status_root == "/") _status_root.clear();
             }
-            if (_config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string.size())
+            if (_config->at_key_parent("cookie_page", _parent + ".location." + std::to_string(index))->_string.size())
             {
                 if (_cookie_page.size())
                     exit_error("several cookies pages");
-                _cookie_page = _config->at_key_parent("cookie_page", parent + ".location." + std::to_string(index))->_string;
-                _cookie_route =  _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                _cookie_page = _config->at_key_parent("cookie_page", _parent + ".location." + std::to_string(index))->_string;
+                _cookie_route =  _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (_cookie_route == "/") _cookie_route.clear();
-                _cookie_root =  _config->at_key_parent("root", parent + ".location." + std::to_string(index))->_string;
+                _cookie_root =  _config->at_key_parent("root", _parent + ".location." + std::to_string(index))->_string;
                 if (_cookie_root == "/") _cookie_root.clear();
             }
-            if (_config->at_key_parent("redirect", parent + ".location." + std::to_string(index)))
+            if (_config->at_key_parent("redirect", _parent + ".location." + std::to_string(index)))
             {
-                std::string route = _config->at_key_parent("route", parent + ".location." + std::to_string(index))->_string;
+                std::string route = _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (route == "/") route.clear();
-                std::string red = _config->at_key_parent("redirect", parent + ".location." + std::to_string(index))->_string;
+                std::string red = _config->at_key_parent("redirect", _parent + ".location." + std::to_string(index))->_string;
                 _redirect.push_back(route + "/" +red);
             }
         }
@@ -247,6 +248,18 @@ public:
         EV_SET(&_ev_set.back(), this->_ev_list[i].ident, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
     }
 
+    bool check_autoindex(std::string path)
+    {
+        for (int index = 0; index < _loc_nb; index++)
+        {
+            std::string route =  _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
+            if ((route) == path)
+                if (_config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index)))
+                    return _config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index))->_bool;
+        }
+        return _autoindex;
+    }
+
     // Receives request and sets the client ready to send the response
     Request request_handler(int &i, std::string _index, std::string _root, std::string _route, std::vector<int> _methods, std::string _error_page, std::string _status_route, std::string _status_root)
     {
@@ -333,10 +346,11 @@ public:
                 cgi.execute(this->_ev_list[i].ident, request, _status_root + _status_route + "/" + _error_page);
             else
             {
+                std::string path = _root + _route;
                 if (request.GetMethod() == GET)
-                    rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, _root + _route, _autoindex);
+                    rep.methodGET(_ev_list, i, _status_root + _status_route + "/" + _error_page, path, check_autoindex(rep.GetUri().GetPath()));
                 else if (request.GetMethod() == DELETE)
-                    rep.methodDELETE(_ev_list, i, _root + _route + _cgi_dir);
+                    rep.methodDELETE(_ev_list, i, path + _cgi_dir);
             }
         }
         _rq = 0;

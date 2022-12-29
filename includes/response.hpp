@@ -120,7 +120,7 @@ public:
 		return send(ev_list[i].ident, (headers.str() + html).c_str(), (headers.str() + html).size(), 0);
 	}
 
-	int methodGET(struct kevent *ev_list , int &i, std::string error_loc, std::string path, bool &autoindex)
+	int methodGET(struct kevent *ev_list , int &i, std::string error_loc, std::string path, bool autoindex)
 	{
 		std::stringstream	s;
 		std::ifstream 		file;

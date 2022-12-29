@@ -24,3 +24,4 @@
         route = "/cookies"
         root = "/www"
         cookie_page = "cookies.html"
+        autoindex = false
