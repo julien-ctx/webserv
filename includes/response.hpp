@@ -191,7 +191,7 @@ public:
 		content << file.rdbuf();
 		s << "HTTP/1.1 200 OK\r\n";
 		s << "Content-Length: " <<  content.str().size() << "\r\n";
-		s << "Set-Cookie: session_id=marwan\r\n";
+		s << "Set-Cookie: session_id=marwan; path=/; expires=Fri, 31 Dec 9999 23:59:59 GMT\r\n";
 		s << "Content-Type: text/html\r\n\r\n";	
 		s << content.str();
 		file.close();
@@ -214,24 +214,24 @@ public:
 		std::string file_content;
 
 		file_name = "." + error_loc;
-		file.open(file_name);
-		if (!file)
-		{
-			std::cout << RED << "Cannot respond correctly with " << status << std::endl << RESET;
+		if (file_name == "./")
+			file_name.clear();
+		else
+			file.open(file_name);
+		if (!file || file_name.empty())
 			file_content = "<h1>Error " + std::to_string(status) + "</h1>";
-		}
 		else
 		{
 			buffer << file.rdbuf();
 			file_content = buffer.str();
 			set_error(status, file_content);
+			file.close();
 		}
 		s << _version << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		_content = s.str();
 		_content += file_content;
-		file.close();
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
 	}
 };

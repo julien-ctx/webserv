@@ -68,24 +68,24 @@ public:
 		std::string content;
 
 		file_name = "." + error_loc;
-		file.open(file_name);
-		if (!file)
-		{
-			std::cout << RED << "Cannot respond correctly with " << 413 << std::endl << RESET;
+		if (file_name == "./")
+			file_name.clear();
+		else
+			file.open(file_name);
+		if (!file || file_name.empty())
 			file_content = "<h1>Error " + std::to_string(413) + "</h1>";
-		}
 		else
 		{
 			buffer << file.rdbuf();
 			file_content = buffer.str();
 			set_error(413, file_content);
+			file.close();
 		}
 		s << "HTTP/1.1 413 Request Entity Too Large" << "\r\n"; 
 		s << "Content-Length: " <<  file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		content = s.str();
 		content += file_content;
-		file.close();
 		return send(fd, content.c_str(), content.size(), 0);
 	}
 

@@ -131,8 +131,6 @@ public:
         // Check config errors
         if (!_index.size())
             exit_error("no index specified");
-        if (!_error_page.size())
-            exit_error("no error page specified");
 
         // Other data init
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
@@ -325,7 +323,7 @@ public:
         for (size_t red = 0; red < _redirect.size(); red++)
             if (rep.GetUri().GetPath() == _redirect[red])
                 rep.send_redirection(_ev_list, i, _redir_loc);
-		else if ((rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page) && _cookie_page.size())
+		if ((rep.GetUri().GetPath() == _cookie_route + "/" + _cookie_page) && _cookie_page.size())
             rep.set_cookies(_ev_list, i, _root + _route + _cookie_route + "/" + _cookie_page, _status_root + _status_route + "/" + _error_page);
         else if (request.GetStatus() >= 400)
             rep.send_error(request.GetStatus(), _ev_list, i, _status_root + _status_route + "/" + _error_page);
