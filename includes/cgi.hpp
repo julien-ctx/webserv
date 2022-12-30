@@ -102,14 +102,14 @@ public:
 		int out[2];
 		int in[2];
 		if (pipe(out) < 0)
-			exit_error("pipe function failed");
+			exit_error("pipe function failed", errno);
 		int id = fork();
 		if (id < 0)
-			exit_error("fork function failed");
+			exit_error("fork function failed", errno);
 		else if (!id)
 		{
 			if (pipe(in) < 0)
-				exit_error("pipe function failed");
+				exit_error("pipe function failed", 1);
 			fcntl(in[1], F_SETFL, O_NONBLOCK);
 			ssize_t written = write(in[1], (rq.GetBody() + _cgi_upload_dir).c_str(), rq.GetBodyLength() + _cgi_upload_dir.size());
 			close(in[1]);
@@ -156,7 +156,7 @@ public:
 			}
 
 			if (execve(cmd[0], cmd, get_env()) < 0)
-				exit_error("Invalid CGI program");
+				exit_error("Invalid CGI program", errno);
 		}
 		waitpid(0, &r, 0);
 		char buf[BUFFER_SIZE];

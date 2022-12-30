@@ -75,7 +75,7 @@ public:
             if (ptr->_string.size())
             {
                 if (_index.size())
-                    exit_error("several indexes in config file");
+                    exit_error("several indexes in config file", 1);
                 _index = ptr->_string;
                 _uploadable = _config->at_key_parent("uploadable", _parent + ".location." + std::to_string(index))->_bool;
                 _cgi_dir = _config->at_key_parent("cgi_dir", _parent + ".location." + std::to_string(index))->_string;
@@ -97,7 +97,7 @@ public:
                     else if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[j]._string == "DELETE")
                         _methods.push_back(DELETE);
                     else
-                        exit_error("some allowed methods are not handled by the server");
+                        exit_error("some allowed methods are not handled by the server", 1);
                 }
                 if (_config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index)))
                     _autoindex = _config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index))->_bool;
@@ -105,12 +105,12 @@ public:
             else
             {
                 if (_config->at_key_parent("root", _parent + ".location." + std::to_string(index))->_string != "/www")
-                    exit_error("several different roots");
+                    exit_error("several different roots", 1);
             }
             if (_config->at_key_parent("error_page", _parent + ".location." + std::to_string(index))->_string.size())
             {
                 if (_error_page.size())
-                    exit_error("several error pages");
+                    exit_error("several error pages", 1);
                 _error_page = _config->at_key_parent("error_page", _parent + ".location." + std::to_string(index))->_string;
                 _status_route = _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (_status_route == "/") _status_route.clear();
@@ -120,7 +120,7 @@ public:
             if (_config->at_key_parent("cookie_page", _parent + ".location." + std::to_string(index))->_string.size())
             {
                 if (_cookie_page.size())
-                    exit_error("several cookies pages");
+                    exit_error("several cookies pages", 1);
                 _cookie_page = _config->at_key_parent("cookie_page", _parent + ".location." + std::to_string(index))->_string;
                 _cookie_route =  _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (_cookie_route == "/") _cookie_route.clear();
@@ -137,7 +137,7 @@ public:
         }
         // Check config errors
         if (!_index.size())
-            exit_error("no index specified");
+            exit_error("no index specified", 1);
 
         // Other data init
         std::memset(this->_clients, 0, SOMAXCONN * sizeof(int));
@@ -148,7 +148,7 @@ public:
 
         // Creates the socket
         if ((this->_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-            exit_error("socket function failed");
+            exit_error("socket function failed", errno);
         // Chooses IPv4
         this->_addr.sin_family = AF_INET;
         // Defines the port
@@ -199,13 +199,13 @@ public:
         if (setsockopt(this->_fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0)
         {
             close(this->_fd);
-            exit_error("setsockopt function failed");
+            exit_error("setsockopt function failed", errno);
         }
         // Associates the socket with local address
         if (bind(this->_fd, (const struct sockaddr *)&this->_addr, sizeof(this->_addr)) < 0)
         {
             close(this->_fd);
-            exit_error("bind function failed");
+            exit_error("bind function failed", errno);
         }
     }
 
@@ -214,7 +214,7 @@ public:
         if ((this->_kq = kqueue()) < 0)
         {
             close(this->_fd);
-            exit_error("kqueue function failed");
+            exit_error("kqueue function failed", errno);
         }
 
         std::cout << BLUE << "[SERVER] " << _addr_name << ":" + std::to_string(this->_port) << std::endl << RESET;
@@ -222,7 +222,7 @@ public:
         if (listen(this->_fd, SOMAXCONN) < 0)
         {
             close(this->_fd);
-		    exit_error("listen function failed");
+		    exit_error("listen function failed", errno);
         }
     }
 
@@ -321,7 +321,7 @@ public:
         int ret = recv(this->_ev_list[i].ident, this->_buf, BUFFER_SIZE, BUFFER_SIZE);
         if (ret < 0)
         {
-            request.SetStatus(500);
+            delete_client(_ev_list[i].ident);
             return request;
         }
         else

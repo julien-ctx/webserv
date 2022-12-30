@@ -41,7 +41,7 @@
 #define CYAN    "\033[1m\033[36m"      /* Bold Cyan */
 #define WHITE   "\033[1m\033[37m"      /* Bold White */
 
-void exit_error (std::string str);
+void exit_error (std::string str, int error_no);
 
 extern char **environ;
 
