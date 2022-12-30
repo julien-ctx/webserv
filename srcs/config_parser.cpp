@@ -169,7 +169,7 @@ void	exist_good_type(TOML::parse *pars, string key, TOML::types t, bool b, strin
 			exist_good_type(pars, string("index"), TOML::T_string, true, string("\"\""));
 			exist_good_type(pars, string("auto_index"), TOML::T_bool, true, string("false"));
 			exist_good_type(pars, string("uploadable"), TOML::T_bool, true, string("false"));
-			exist_good_type(pars, string("cgi_dir"), TOML::T_string, true, string("\"/www/cgi\""));
+			exist_good_type(pars, string("cgi_dir"), TOML::T_string, true, string("\"/cgi\""));
 			exist_good_type(pars, string("error_page"), TOML::T_string, false, string("\"\""));
 			exist_good_type(pars, string("cookie_page"), TOML::T_string, false, string("\"\""));
  			//to see with the others

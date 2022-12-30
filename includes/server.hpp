@@ -26,7 +26,7 @@ private:
     std::string _cgi_dir;
     std::string _cgi_upload_dir;
     int _loc_nb;
-    bool _uploadable;
+    int _uploadable;
     std::string _index;
     std::string _root;
     std::string _route;
@@ -68,6 +68,7 @@ public:
         _loc_nb = _config->at_key_parent("location", _parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
         _redir_loc = "https://www.google.com/";
+        _uploadable = -1;
 
         for (int index = 0; index < _loc_nb; index++)
         {
@@ -101,6 +102,11 @@ public:
                 }
                 if (_config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index)))
                     _autoindex = _config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index))->_bool;
+            }
+            else
+            {
+                if (_config->at_key_parent("root", _parent + ".location." + std::to_string(index))->_string != "/www")
+                    exit_error("several different roots");
             }
             if (_config->at_key_parent("error_page", _parent + ".location." + std::to_string(index))->_string.size())
             {
@@ -264,6 +270,7 @@ public:
     bool wrong_method(std::string path, int req_method)
     {
         std::string method;
+        bool file_exists = false;
         switch (req_method)
         {
             case GET:
@@ -289,6 +296,7 @@ public:
                 file_name = path.substr(pos + 1);
             if (route + "/" + file_name == path || _cgi_dir + "/" + file_name == path)
             {
+                file_exists = true;
                 if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index)))
                 {
                     int size = _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array.size();
@@ -298,7 +306,7 @@ public:
                 }
             }
         }
-        return true;
+        return file_exists ? true : false;
     }
 
     // Receives request and sets the client ready to send the response
@@ -324,7 +332,7 @@ public:
         if (request.GetLength())
             _full_len = request.GetLength();
 
-        if (wrong_method(request.GetUri().GetPath(), request.GetMethod()))
+        if (wrong_method(request.GetUri().GetPath(), request.GetMethod()) || (request.GetMethod() == POST && !_uploadable))
         {
             if (request.GetMethod() == GET || request.GetMethod() == POST || request.GetMethod() == DELETE)
                 request.SetStatus(405);

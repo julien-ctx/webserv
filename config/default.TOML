@@ -5,8 +5,8 @@
     body_size = 1048576
 
     [[server.location]]
-        route = "/"
         root = "/www"
+        route = "/"
         index = "index.html"
         allowed_methods = ["POST", "GET", "DELETE"]
         cgi_extension = ["py", "sh", "pl"]
@@ -16,11 +16,9 @@
 
     [[server.location]]
         route = "/status"
-        root = "/www"
         error_page = "error.html"
         redirect = "redirect.html"
     
     [[server.location]]
         route = "/cookies"
-        root = "/www"
         cookie_page = "cookies.html"
