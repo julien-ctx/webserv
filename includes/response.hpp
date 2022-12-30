@@ -203,6 +203,8 @@ public:
 		size_t start = 0;
 		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
 			content.replace(start, 10, std::to_string(status));
+		while ((start = content.find("*ERROR_MSG*")) != std::string::npos)
+			content.replace(start, 11, status_to_string(status));
 	}
 
 	bool send_error(int status, struct kevent *ev_list, int i, std::string error_loc)

@@ -300,7 +300,9 @@ public:
                 {
                     int size = _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array.size();
                     for (int i = 0; i < size; i++)
-                        if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[i]._string == method)
+                        if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[i]._string == method
+                            && ((route == _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_string) ||
+                                _cgi_dir == _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_string))
                             return false;
                 }
             }

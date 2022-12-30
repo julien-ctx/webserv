@@ -25,11 +25,13 @@ public:
 		return cmd;
 	}
 
-		void set_error(int status, std::string &content)
+	void set_error(int status, std::string &content)
 	{
 		size_t start = 0;
 		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
 			content.replace(start, 10, std::to_string(status));
+		while ((start = content.find("*ERROR_MSG*")) != std::string::npos)
+			content.replace(start, 11, status_to_string(status));
 	}
 
 	bool send_error(int status, uintptr_t &fd, std::string error_loc)
@@ -55,7 +57,7 @@ public:
 			set_error(status, file_content);
 			file.close();
 		}
-		s << "HTTP/1.1 413 Request Entity Too Large" << "\r\n"; 
+		s << "HTTP/1.1 " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  file_content.size() << "\r\n";
 		s << "Content-Type: text/html\r\n\r\n";
 		content = s.str();
