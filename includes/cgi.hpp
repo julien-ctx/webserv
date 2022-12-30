@@ -25,40 +25,14 @@ public:
 		return cmd;
 	}
 
-	bool is_cgi(Request &request, std::vector<std::string> &ext)
-	{
-		std::string path = request.GetUri().GetPath();
-
-		if (std::find(ext.begin(), ext.end(), path.substr(path.find_last_of(".") + 1)) != ext.end())
-		{
-			std::ifstream file(this->_path);
-			if (!file)
-				return false;
-			this->_type = path.substr(path.find_last_of(".") + 1);
-			return true;
-		}
-		return false;
-	}
-
-	bool send_output(uintptr_t &fd)
-	{
-		std::string header;
-		if (_path.find("upload.py") != string::npos)
-			header = std::string("HTTP/1.1 201 Created\n");
-		else
-			header = std::string("HTTP/1.1 200 OK\n");
-		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\nContent-Type: text/html\r\n\n");
-		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
-	}
-
-	void set_error(int status, std::string &content)
+		void set_error(int status, std::string &content)
 	{
 		size_t start = 0;
 		while ((start = content.find("*ERROR_NO*")) != std::string::npos)
 			content.replace(start, 10, std::to_string(status));
 	}
 
-	bool send_error(uintptr_t &fd, std::string error_loc)
+	bool send_error(int status, uintptr_t &fd, std::string error_loc)
 	{
 		std::string 		file_name;
 		std::ifstream 		file;
@@ -73,12 +47,12 @@ public:
 		else
 			file.open(file_name);
 		if (!file || file_name.empty())
-			file_content = "<h1>Error " + std::to_string(413) + "</h1>";
+			file_content = "<h1>Error " + std::to_string(status) + "</h1>";
 		else
 		{
 			buffer << file.rdbuf();
 			file_content = buffer.str();
-			set_error(413, file_content);
+			set_error(status, file_content);
 			file.close();
 		}
 		s << "HTTP/1.1 413 Request Entity Too Large" << "\r\n"; 
@@ -87,6 +61,37 @@ public:
 		content = s.str();
 		content += file_content;
 		return send(fd, content.c_str(), content.size(), 0);
+	}
+
+	bool is_cgi(uintptr_t &fd, Request &request, std::vector<std::string> &ext, std::string error_loc)
+	{
+		std::string path = request.GetUri().GetPath();
+
+		if (std::find(ext.begin(), ext.end(), path.substr(path.find_last_of(".") + 1)) != ext.end())
+		{
+			std::ifstream file(this->_path);
+			if (!file)
+				return false;
+			this->_type = path.substr(path.find_last_of(".") + 1);
+			return true;
+		}
+		if (request.GetMethod() == POST)
+		{
+			request.SetStatus(405);
+			send_error(405, fd, error_loc);
+		}
+		return false;
+	}
+
+	bool send_output(uintptr_t &fd)
+	{
+		std::string header;
+		if (_path.find("upload.py") != string::npos)
+			header = std::string("HTTP/1.1 201 Created\n");
+		else
+			header = std::string("HTTP/1.1 200 OK\n");
+		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\nContent-Type: text/html\r\n\n");
+		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
 	}
 
 	bool execute(uintptr_t &fd, Request &rq, std::string error_loc)
@@ -162,7 +167,7 @@ public:
 			this->_output += std::string(buf, ret);
 		}
 		close(out[0]);
-		return r == 0 ? send_output(fd) : send_error(fd, error_loc);
+		return r == 0 ? send_output(fd) : send_error(413, fd, error_loc);
 
 	}
 };

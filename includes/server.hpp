@@ -26,7 +26,7 @@ private:
     std::string _cgi_dir;
     std::string _cgi_upload_dir;
     int _loc_nb;
-    int _uploadable;
+    bool _uploadable;
     std::string _index;
     std::string _root;
     std::string _route;
@@ -68,7 +68,6 @@ public:
         _loc_nb = _config->at_key_parent("location", _parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
         _redir_loc = "https://www.google.com/";
-        _uploadable = -1;
 
         for (int index = 0; index < _loc_nb; index++)
         {
@@ -391,7 +390,7 @@ public:
             rep.send_error(request.GetStatus(), _ev_list, i, _status_root + _status_route + "/" + _error_page);
         else
         {
-            if (cgi.is_cgi(request, _cgi_ext))
+            if (cgi.is_cgi(this->_ev_list[i].ident, request, _cgi_ext, _status_root + _status_route + "/" + _error_page))
                 cgi.execute(this->_ev_list[i].ident, request, _status_root + _status_route + "/" + _error_page);
             else
             {

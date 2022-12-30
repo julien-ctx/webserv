@@ -5,8 +5,8 @@
     body_size = 1048576
 
     [[server.location]]
-        root = "/www"
         route = "/"
+        root = "/www"
         index = "index.html"
         allowed_methods = ["POST", "GET", "DELETE"]
         cgi_extension = ["py", "sh", "pl"]
