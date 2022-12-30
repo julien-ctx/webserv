@@ -296,15 +296,11 @@ public:
             if (route + "/" + file_name == path || _cgi_dir + "/" + file_name == path)
             {
                 file_exists = true;
-                if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index)))
-                {
-                    int size = _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array.size();
-                    for (int i = 0; i < size; i++)
-                        if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[i]._string == method
-                            && ((route == _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_string) ||
-                                _cgi_dir == _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_string))
-                            return false;
-                }
+                int size = _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array.size();
+                for (int i = 0; i < size; i++)
+                    if (_config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array[i]._string == method)
+                        return false;
+                break;
             }
         }
         return file_exists ? true : false;
