@@ -65,7 +65,7 @@ std::ostream& operator<< (std::ostream& o, TOML::value& val)
 	return (o);
 }
 
-void *serv_thread(void *server)
+void *serv_routine(void *server)
 {
 	try
 	{
@@ -110,12 +110,21 @@ int main(int ac, char **av)
 			exit_error("too much servers", 1);
 		pthread_t *threads = new pthread_t[serv_size];
 
-		for (size_t i = 0; i < serv_size; i++)
+		if (serv_size == 1)
 		{
-			Server *serv = new Server(&pars, i);
-			usleep(200);
-			pthread_create(&threads[i], NULL, serv_thread, serv);
+			Server *serv = new Server(&pars, 0);
+			serv_routine(serv);
 		}
+		else
+		{
+			for (size_t i = 0; i < serv_size; i++)
+			{
+				Server *serv = new Server(&pars, i);
+				usleep(100);
+				pthread_create(&threads[i], NULL, serv_routine, serv);
+			}
+		}
+
 		while (1);
 	}
 	catch (const std::exception &e)
