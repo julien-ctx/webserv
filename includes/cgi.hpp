@@ -10,9 +10,10 @@ private:
 	std::string _path;
 	std::string _type;
 	std::string _cgi_upload_dir;
+	std::string _serv_name;
 	std::vector<std::string> _env;
 public:
-	CGI(std::string file, std::string cgi_dir) : _output(""), _path("." + file), _cgi_upload_dir("." + cgi_dir) {}
+	CGI(std::string file, std::string cgi_dir, std::string serv_name) : _output(""), _path("." + file), _cgi_upload_dir("." + cgi_dir), _serv_name(serv_name) {}
 	~CGI() {}
 
 	char **get_env()
@@ -59,7 +60,11 @@ public:
 		}
 		s << "HTTP/1.1 " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  file_content.size() << "\r\n";
-		s << "Content-Type: text/html\r\n\r\n";
+		s << "Content-Type: text/html\r\n";
+		if (_serv_name.size())
+			s << "Server: " + _serv_name + "\r\n\r\n";
+		else
+			s << "\r\n";
 		content = s.str();
 		content += file_content;
 		return send(fd, content.c_str(), content.size(), 0);
@@ -87,13 +92,17 @@ public:
 
 	bool send_output(uintptr_t &fd)
 	{
-		std::string header;
+		std::string headers;
 		if (_path.find("upload.py") != string::npos)
-			header = std::string("HTTP/1.1 201 Created\n");
+			headers = std::string("HTTP/1.1 201 Created\n");
 		else
-			header = std::string("HTTP/1.1 200 OK\n");
-		header += ("Content-Length: " + std::to_string(this->_output.size()) + "\nContent-Type: text/html\r\n\n");
-		return send(fd, (header + this->_output).c_str(), (header + this->_output).size(), 0);
+			headers = std::string("HTTP/1.1 200 OK\n");
+		headers += ("Content-Length: " + std::to_string(this->_output.size()) + "\nContent-Type: text/html\r\n");
+		if (_serv_name.size())
+			headers += "Server: " + _serv_name + "\r\n\r\n";
+		else
+			headers += "\r\n";
+		return send(fd, (headers + this->_output).c_str(), (headers + this->_output).size(), 0);
 	}
 
 	bool execute(uintptr_t &fd, Request &rq, std::string error_loc)

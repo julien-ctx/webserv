@@ -351,7 +351,10 @@ public:
     // Sends the response and sets the socket ready to read the request again
     Response response_handler(int &i, Request request)
     {
-        CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_upload_dir);
+        std::string serv_name;
+        if (request.GetHeaders().count("Host") > 0)
+            serv_name = request.GetHeaders().at("Host");
+        CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_upload_dir, serv_name);
         Response rep(request);
         if (request.GetStatus() >= 400)
         {

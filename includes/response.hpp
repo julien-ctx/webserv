@@ -16,6 +16,8 @@ std::string status_to_string(int status)
         return "Moved Permanently";
     else if (status == 400) // Needs to be done
         return "Bad Request";
+	else if (status == 403)
+		return "Forbidden"; // OK
     else if (status == 404) // OK
         return "Not Found";
     else if (status == 405) // OK
@@ -29,7 +31,7 @@ std::string status_to_string(int status)
     else if (status == 505) // Needs to be done
         return "HTTP Version Not Supported"; 
     else 
-        return "Unknown status code";
+        return "";
 }
 
 class Response
@@ -114,7 +116,11 @@ public:
 		html += "</html>\n";
 		headers << "HTTP/1.1 200 OK\r\n";
 		headers << "Content-Length: " <<  html.size() << "\r\n";
-		headers << "Content-Type: text/html\r\n\r\n";
+		headers << "Content-Type: text/html\r\n";
+		if (_headers.count("Host") > 0)
+			headers << "Server: " + _headers.at("Host") + "\r\n\r\n";
+		else
+			headers << "\r\n";
 		closedir(dir);
 		file.close();
 		return send(ev_list[i].ident, (headers.str() + html).c_str(), (headers.str() + html).size(), 0);
@@ -140,7 +146,11 @@ public:
 		buffer << file.rdbuf();
 		s << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
 		s << "Content-Length: " << buffer.str().size() << "\r\n";
-		s << "Content-Type: " << mime(_uri._path) << "\r\n\r\n";
+		s << "Content-Type: " << mime(_uri._path) << "\r\n";
+		if (_headers.count("Host") > 0)
+			s << "Server: " + _headers.at("Host") + "\r\n\r\n";
+		else
+			s << "\r\n";
 		_content = s.str();
 		this->_content += buffer.str();
 		file.close();
@@ -167,7 +177,11 @@ public:
 		_status = 200;
 		content << _version << " " << _status  << " " << status_to_string(_status) << "\r\n";
 		content << "Content-Length: " << html.size() << "\r\n";
-		content << "Content-Type: " "text/html" << "\r\n\r\n";
+		content << "Content-Type: " "text/html" << "\r\n";
+		if (_headers.count("Host") > 0)
+			content << "Server: " + _headers.at("Host") + "\r\n\r\n";
+		else
+			content << "\r\n";
 		content << html;
 		return send(ev_list[i].ident, content.str().c_str(), content.str().size(), 0);
 	}
@@ -176,7 +190,11 @@ public:
 	{
 		std::string response;
 		response = "HTTP/1.1 301 Moved Permanently\r\n";
-		response += "Location: " + redir_loc + "\r\n\r\n";
+		response += "Location: " + redir_loc + "\r\n";
+		if (_headers.count("Host") > 0)
+			response += "Server: " + _headers.at("Host") + "\r\n\r\n";
+		else
+			response += "\r\n";
 		send(ev_list[i].ident, response.c_str(), response.size(), 0);
 	}
 
@@ -192,7 +210,11 @@ public:
 		s << "HTTP/1.1 200 OK\r\n";
 		s << "Content-Length: " <<  content.str().size() << "\r\n";
 		s << "Set-Cookie: session_id=marwan; path=/; expires=Fri, 31 Dec 9999 23:59:59 GMT\r\n";
-		s << "Content-Type: text/html\r\n\r\n";	
+		s << "Content-Type: text/html\r\n";	
+		if (_headers.count("Host") > 0)
+			s << "Server: " + _headers.at("Host") + "\r\n\r\n";
+		else
+			s << "\r\n";
 		s << content.str();
 		file.close();
 		return send(ev_list[i].ident, s.str().c_str(), s.str().size(), 0);
@@ -231,7 +253,11 @@ public:
 		}
 		s << _version << " " << status << " " << status_to_string(status) << "\r\n"; 
 		s << "Content-Length: " <<  file_content.size() << "\r\n";
-		s << "Content-Type: text/html\r\n\r\n";
+		s << "Content-Type: text/html\r\n";
+		if (_headers.count("Host") > 0)
+			s << "Server: " + _headers.at("Host") + "\r\n\r\n";
+		else
+			s << "\r\n";
 		_content = s.str();
 		_content += file_content;
 		return send(ev_list[i].ident, _content.c_str(), _content.size(), 0);
