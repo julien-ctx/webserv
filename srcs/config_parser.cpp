@@ -174,7 +174,7 @@ void	exist_good_type(TOML::parse *pars, string key, TOML::types t, bool b, strin
 			route_name.push_back(pars->at_key_parent(string("route"), (pars->_here))->_string);
 			exist_good_type(pars, string("root"), TOML::T_string, true, string("\"/www\""));
 			exist_good_type(pars, string("index"), TOML::T_string, true, string("\"\""));
-			exist_good_type(pars, string("auto_index"), TOML::T_bool, true, string("false"));
+			exist_good_type(pars, string("autoindex"), TOML::T_bool, true, string("false"));
 			exist_good_type(pars, string("uploadable"), TOML::T_bool, true, string("false"));
 			exist_good_type(pars, string("error_page"), TOML::T_string, false, string("\"\""));
 			exist_good_type(pars, string("cookie_page"), TOML::T_string, false, string("\"\""));

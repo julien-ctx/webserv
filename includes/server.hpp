@@ -268,7 +268,7 @@ public:
         for (int index = 0; index < _loc_nb; index++)
         {
             std::string route =  _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
-            if ((route) == path)
+            if (route == path)
                 if (_config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index)))
                     return _config->at_key_parent("autoindex", _parent + ".location." + std::to_string(index))->_bool;
         }
