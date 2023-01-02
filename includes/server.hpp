@@ -68,11 +68,19 @@ public:
 		_addr_name = _config->at_key_parent("address", _parent)->_string;
         _loc_nb = _config->at_key_parent("location", _parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
+
+        _cgi_dir = _config->at_key_parent("cgi_dir", _parent)->_string;
+        _cgi_upload_dir = _cgi_dir + "/uploads";
+        size_t size = _config->at_key_parent("cgi_extension", _parent)->_array.size();
+        for (size_t j = 0; j < size; j++)
+            _cgi_ext.push_back(_config->at_key_parent("cgi_extension", _parent)->_array[j]._string);
+        
         int serv_nb = _config->at_key_parent("server_name", "server." + to_string(i))->_array.size();
         _serv_names.push_back(_addr_name + ":" + std::to_string(_port));
         _serv_names.push_back("localhost:" + std::to_string(_port));
         for (int index = 0; index < serv_nb; index++)
             _serv_names.push_back(_config->at_key_parent("server_name", "server." + to_string(i))->_array[index]._string);
+        
         _redir_loc = "https://www.google.com/";
 
         for (int index = 0; index < _loc_nb; index++)
@@ -84,15 +92,10 @@ public:
                     exit_error("several indexes in config file", 1);
                 _index = ptr->_string;
                 _uploadable = _config->at_key_parent("uploadable", _parent + ".location." + std::to_string(index))->_bool;
-                _cgi_dir = _config->at_key_parent("cgi_dir", _parent + ".location." + std::to_string(index))->_string;
-                _cgi_upload_dir = _cgi_dir + "/uploads";
                 _route = _config->at_key_parent("route", _parent + ".location." + std::to_string(index))->_string;
                 if (_route == "/") _route.clear();
                 _root = _config->at_key_parent("root", _parent + ".location." + std::to_string(index))->_string;
                 if (_root == "/") _root.clear();
-                size_t size = _config->at_key_parent("cgi_extension", _parent + ".location." + std::to_string(index))->_array.size();
-                for (size_t j = 0; j < size; j++)
-                    _cgi_ext.push_back(_config->at_key_parent("cgi_extension", _parent + ".location." + std::to_string(index))->_array[j]._string);
                 size =  _config->at_key_parent("allowed_methods", _parent + ".location." + std::to_string(index))->_array.size();
                 for (size_t j = 0; j < size; j++)
                 {

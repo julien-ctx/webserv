@@ -140,6 +140,13 @@ void	exist_good_type(TOML::parse *pars, string key, TOML::types t, bool b, strin
 				pars->at_key_parent(string("default"), pars->_here)->_bool = true;
 			}
 		}
+		exist_good_type(pars, string("cgi_dir"), TOML::T_string, true, string("\"/cgi\""));
+		exist_good_type(pars, string("cgi_extension"), TOML::T_array, true, string("[\"py\", \"sh\", \"pl\"]"));
+		for (size_t k = 0; k < pars->at_key_parent(string("cgi_extension"), pars->_here)->_array.size(); k++)
+		{
+			if (!limits_value_str(cgi_ex, pars->at_key_parent(to_string(k), (pars->_here + string(".cgi_extension")))->_string))
+					throw TypeError(" has an invalid value", to_string(k));
+		}
  		exist_good_type(pars, string("server_name"), TOML::T_array, false, string("[\"\"]"));
  		if (pars->at_key_parent(to_string(0), (pars->_here + string(".server_name")))->_typing != TOML::T_string )
 			throw TypeError(" hasn't the good type", to_string(i));
@@ -169,16 +176,9 @@ void	exist_good_type(TOML::parse *pars, string key, TOML::types t, bool b, strin
 			exist_good_type(pars, string("index"), TOML::T_string, true, string("\"\""));
 			exist_good_type(pars, string("auto_index"), TOML::T_bool, true, string("false"));
 			exist_good_type(pars, string("uploadable"), TOML::T_bool, true, string("false"));
-			exist_good_type(pars, string("cgi_dir"), TOML::T_string, true, string("\"/cgi\""));
 			exist_good_type(pars, string("error_page"), TOML::T_string, false, string("\"\""));
 			exist_good_type(pars, string("cookie_page"), TOML::T_string, false, string("\"\""));
  			//to see with the others
-			exist_good_type(pars, string("cgi_extension"), TOML::T_array, true, string("[\"py\", \"sh\", \"pl\"]"));
-			for (size_t k = 0; k < pars->at_key_parent(string("cgi_extension"), pars->_here)->_array.size(); k++)
-			{
-				if (!limits_value_str(cgi_ex, pars->at_key_parent(to_string(k), (pars->_here + string(".cgi_extension")))->_string))
-						throw TypeError(" has an invalid value", to_string(k));
- 			}
  			exist_good_type(pars, string("allowed_methods"), TOML::T_array, true, string("[\"POST\", \"GET\", \"DELETE\"]"));
 			if (pars->at_key_parent(to_string(0), (pars->_here + string(".allowed_methods")))->_typing != TOML::T_string )
 				throw TypeError(" hasn't the good type", to_string(i));

@@ -25,7 +25,7 @@
 # include "../includes/config_parser.hpp"
 
 #define BUFFER_SIZE 30000
-#define TIMEOUT 3000
+#define TIMEOUT 4000
 #define MAX_SERVERS 5
 
 #define DEBUG(x) std::cout << CYAN << x << std::endl << RESET;

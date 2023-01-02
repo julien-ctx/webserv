@@ -3,15 +3,15 @@
     address = "127.0.0.1"
     server_name = ["www.example.com"]
     body_size = 1048576
+    cgi_extension = ["py", "sh", "pl"]
+    cgi_dir = "/cgi"
 
     [[server.location]]
         route = "/"
         root = "/www"
         index = "index.html"
         allowed_methods = ["POST", "GET", "DELETE"]
-        cgi_extension = ["py", "sh", "pl"]
         uploadable = true
-        cgi_dir = "/cgi"
         autoindex = true
 
     [[server.location]]
