@@ -38,6 +38,7 @@ private:
     std::string _cookie_route;
     std::string _cookie_page;
     std::vector<std::string> _redirect;
+    std::vector<std::string> _serv_names;
     std::string _redir_loc;
     bool _autoindex;
 
@@ -67,6 +68,11 @@ public:
 		_addr_name = _config->at_key_parent("address", _parent)->_string;
         _loc_nb = _config->at_key_parent("location", _parent)->_array.size();
         _max_size = _config->at_key_parent("body_size", "server." + to_string(i))->_int;
+        int serv_nb = _config->at_key_parent("server_name", "server." + to_string(i))->_array.size();
+        _serv_names.push_back(_addr_name + ":" + std::to_string(_port));
+        _serv_names.push_back("localhost:" + std::to_string(_port));
+        for (int index = 0; index < serv_nb; index++)
+            _serv_names.push_back(_config->at_key_parent("server_name", "server." + to_string(i))->_array[index]._string);
         _redir_loc = "https://www.google.com/";
 
         for (int index = 0; index < _loc_nb; index++)
@@ -354,6 +360,11 @@ public:
         std::string serv_name;
         if (request.GetHeaders().count("Host") > 0)
             serv_name = request.GetHeaders().at("Host");
+        if (std::find(_serv_names.begin(), _serv_names.end(), serv_name) == _serv_names.end())
+        {
+            request.SetStatus(403);
+            request.RemoveHeader("Host");
+        }
         CGI cgi(_root + _route + request.GetUri().GetPath(), _root + _route + _cgi_upload_dir, serv_name);
         Response rep(request);
         if (request.GetStatus() >= 400)

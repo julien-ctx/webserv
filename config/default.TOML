@@ -1,7 +1,7 @@
 [[server]]
     port = 4206
     address = "127.0.0.1"
-    server_name = ["localhost"]
+    server_name = ["www.example.com"]
     body_size = 1048576
 
     [[server.location]]
