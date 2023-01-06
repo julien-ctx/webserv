@@ -1,13 +1,13 @@
 # 42_webserv - C++ Web Server
 
 ## Overview
-42_webserv is a **C++ implementation of a web server** that is capable of handling multiple clients simultaneously using threads an non-blocking functions.
+42_webserv is a **C++ implementation of a web server** that is capable of handling multiple clients simultaneously using I/O multiplexing and non-blocking functions.
 
 <img src="https://raw.githubusercontent.com/julien-ctx/42_webserv/master/assets/webserv.png">
 
 ## Features
 - Parsing of a config file (**TOML**) to specify different rules for different roots/routes.
-- Up to **128 clients** at the same time thanks to I/O multiplexing using kqueue.
+- Up to **128 clients** at the same time thanks to kqueue and threads.
 - Handling of the following HTTP methods: **GET, POST, DELETE**.
 - Error handling for invalid requests with **HTTP status codes**.
 - File upload through a **Python CGI**.
