@@ -12,15 +12,17 @@
 - Error handling for invalid requests with **HTTP status codes**.
 - File upload through a **Python CGI**.
 - Support for multiple CGI scripts (**Python, Perl, Bash**).
-- 
+- **Server names** to specify which hostname should be used to handle a specific request.
 - Cookie session management using Javascript embedded snippets.
 ## Getting Started
 You can run the project using the following syntax:
 
 ```
-./webserv config/config.TOML
+./webserv config/default.TOML
 ```
-You can change or edit the config file according to your needs.
+*You can change or edit the config file according to your needs.*
+
+Then, all you have to do is opening Chrome browser and pasting the address and the port in the URL bar.
 
 ## Authors
 
