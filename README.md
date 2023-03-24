@@ -1,7 +1,7 @@
-# 42_webserv - C++ Web Server
+# Webserv: a C++ Web Server | 42
 
 ## Overview
-42_webserv is a **C++ implementation of a web server** that is capable of handling multiple clients simultaneously using I/O multiplexing and non-blocking functions.
+Webserv is a **C++ implementation of a web server** that is capable of handling multiple clients simultaneously using I/O multiplexing and non-blocking functions.
 
 <img src="https://raw.githubusercontent.com/julien-ctx/42_webserv/master/assets/webserv.png">
 
@@ -18,7 +18,7 @@
 You can run the project using the following syntax:
 
 ```
-./webserv config/default.TOML
+make && ./webserv config/default.TOML
 ```
 *You can change or edit the config file according to your needs.*
 
